@@ -14,6 +14,14 @@ public interface FileUploadClient {
     FileWrapper uploadFile (String filePath) throws CustomClientException;
     
     /**
+     * 
+     * @param file FileWrapper of the file to be downloaded from the server
+      * @return the file path of the downloaded file
+     * @throws CustomClientException
+     */
+    String downloadFile (FileWrapper file) throws CustomClientException;
+    
+    /**
      * sets the user name of the user
      * @param username name of the user
      */

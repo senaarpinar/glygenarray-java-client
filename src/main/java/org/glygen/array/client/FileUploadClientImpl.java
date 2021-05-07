@@ -3,21 +3,33 @@ package org.glygen.array.client;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 import org.glygen.array.client.exception.CustomClientException;
 import org.glygen.array.client.model.LoginRequest;
 import org.glygen.array.client.model.UploadResult;
 import org.glygen.array.client.model.data.FileWrapper;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RequestCallback;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class FileUploadClientImpl implements FileUploadClient {
     
@@ -139,7 +151,46 @@ public class FileUploadClientImpl implements FileUploadClient {
         fileUploadTest.setURL("http://localhost:8080/");
         fileUploadTest.setUsername(args[0]);
         fileUploadTest.setPassword(args[1]);
-        System.out.println(fileUploadTest.uploadFile("/Users/sena/Desktop/icl_lib.xml"));
+       // System.out.println(fileUploadTest.uploadFile("/Users/sena/Desktop/icl_lib.xml"));
+        
+        FileWrapper fileW = new FileWrapper();
+        fileW.setFileFolder("./uploads/AD4492941");
+        fileW.setIdentifier("1615932849855.raw");
+        fileW.setOriginalName("rawdata.raw");
+        System.out.println(fileUploadTest.downloadFile(fileW));
+    }
+
+    @Override
+    public String downloadFile(FileWrapper file) throws CustomClientException {
+        if (token == null) login(this.username, this.password);
+        
+        RequestCallback requestCallback = new RequestCallback() {
+
+            @Override
+            public void doWithRequest(ClientHttpRequest request) throws IOException {      
+                    request.getHeaders().set("Authorization", token);
+                    request.getHeaders().setAccept(Arrays.asList(MediaType.ALL));
+            }
+        };
+        String url = this.url + "array/download";
+        url += "?fileFolder=" + file.getFileFolder();
+        url += "&fileIdentifier=" + file.getIdentifier();
+        url += "&originalName=" + file.getOriginalName();
+        try {
+            
+            File download = restTemplate.execute(url, HttpMethod.GET, requestCallback, clientHttpResponse -> {
+                ContentDisposition d = clientHttpResponse.getHeaders().getContentDisposition();
+                String originalFileName = d.getFilename();
+                File ret = new File(originalFileName);
+                if (ret.exists())
+                    ret.delete();
+                StreamUtils.copy(clientHttpResponse.getBody(), new FileOutputStream(ret));
+                return ret;
+            });
+            return download.getAbsolutePath();
+        } catch (HttpClientErrorException e) {
+            throw new CustomClientException (e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        }
     }
 
 }

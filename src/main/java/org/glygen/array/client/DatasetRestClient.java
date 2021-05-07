@@ -1,10 +1,8 @@
 package org.glygen.array.client;
 
 import org.glygen.array.client.model.data.ArrayDataset;
-import org.glygen.array.client.model.data.FileWrapper;
 import org.glygen.array.client.model.data.PrintedSlide;
-import org.glygen.array.client.model.data.RawData;
-import org.glygen.array.client.model.data.StatisticalMethod;
+import org.glygen.array.client.model.data.Slide;
 import org.glygen.array.client.model.metadata.AssayMetadata;
 import org.glygen.array.client.model.metadata.DataProcessingSoftware;
 import org.glygen.array.client.model.metadata.ImageAnalysisSoftware;
@@ -12,6 +10,7 @@ import org.glygen.array.client.model.metadata.Printer;
 import org.glygen.array.client.model.metadata.Sample;
 import org.glygen.array.client.model.metadata.ScannerMetadata;
 import org.glygen.array.client.model.metadata.SlideMetadata;
+import org.glygen.array.client.model.metadata.SpotMetadata;
 
 public interface DatasetRestClient {
     /**
@@ -43,29 +42,15 @@ public interface DatasetRestClient {
     String addDataset(String datasetName, Sample sample);
     
     /**
-     * add the processed data extracted from the file to the dataset
+     * add the given slide to the dataset
      * 
-     * @param file FileWrapper of the uploaded processed data file that contains the assigned identifier, original name and file format if applicable
-     * @param method statistical method used for processing the data (eliminate/average), label of the StatisticalMethod
+     * @param slide slide to be added. The slide should contain one or more images. An image should be associated with a raw data
+     * and the rawdata should have a list of processed data. All the metadata should already be in the repository. In addition, all the files
+     * refered by the image/rawdata/processeddata should already be uploaded to the server
      * @param datasetId id of the dataset to add to (dataset should already be in the repository)
-     * @param metadataId id of the data processing software metadata used (should already be in the repository)
-     * @return the id of the newly added processed data
+     * @return the id of the newly added slide
      */
-    String addProcessedDataFromExcel(FileWrapper file, String statisticalMethod, String datasetId,
-            String metadataId);
-    
-    /**
-     * add the given RawData to the dataset
-     * 
-     * @param rawData RawData to be added. RawData should have a slide
-     * and slide should have an existing printedSlide (specified by name or uri or id)
-     * it should have an Image (specified with filename (already uploaded) and an existing Scanner metadata (by name, uri or id))
-     * it should have a filename (already uploaded), file format and a power level
-     * and it should have an existing ImageAnalysisSoftwareMetadata (specified by name, id or uri"
-     * @param datasetId id of the dataset to add to (dataset should already be in the repository)
-     * @return the id of the newly added raw data
-     */
-    String addRawdataToDataset (RawData rawData, String datasetId);
+    String addSlideToDataset (Slide slide, String datasetId);
     
     /**
      * add the given sample to the repository
@@ -73,14 +58,6 @@ public interface DatasetRestClient {
      * @return the id of the newly added sample
      */
     String addSample(Sample sample);
-    
-    /**
-     * add the given sample to the repository
-     * @param sample Sample 
-     * @param validate true if sample metadata should be validated or false to bypass validation (should only be done for legacy data)
-     * @return the id of the newly added sample
-     */
-    String addSample(Sample sample, boolean validate);
     
     /**
      * add the given printer to the repository
@@ -104,25 +81,15 @@ public interface DatasetRestClient {
      */
     String addScannerMetadata (ScannerMetadata scanner);
     
-    /**
-     * 
-     * @param scanner
-     * @param validate
-     * @return
-     */
-    String addScannerMetadata (ScannerMetadata scanner, boolean validate);
-    
     String addSlideMetadata (SlideMetadata slideMetadata);
-    String addSlideMetadata (SlideMetadata slideMetadata, boolean validate);
     
     String addImageAnalysisMetadata (ImageAnalysisSoftware metadata);
-    String addImageAnalysisMetadata (ImageAnalysisSoftware metadata, boolean validate);
     
     String addDataProcessingMetadata (DataProcessingSoftware metadata); 
-    String addDataProcessingMetadata (DataProcessingSoftware metadata, boolean validate);
     
-    String adAssayMetadata (AssayMetadata metadata); 
-    String addAssayMetadata (AssayMetadata metadata, boolean validate);
+    String addAssayMetadata (AssayMetadata metadata); 
+    
+    String addSpotMetadata (SpotMetadata metadata); 
 
     /**
      * add the given printed slide to the repository
@@ -140,12 +107,26 @@ public interface DatasetRestClient {
      */
     String getDataProcessingMetadataByLabel (String name);
     String getAssayMetadataByLabel (String name);
+    String getSpotMetadataByLabel (String name);
     String getImageAnalysisMetadataByLabel (String name);
     String getSlideMetadataByLabel (String name);
     String getScannerByLabel (String name);
     String getPrinterByLabel (String name);
     String getSampleByLabel (String name);
     
+    /**
+     * retrieve the array dataset given its name
+     * @param name name of the dataset to be retrieved
+     * @return the array dataset of null if not found
+     */
     ArrayDataset getDatasetByLabel (String name);
+    
+    /**
+     * return slide given its id
+     * 
+     * @param id id of the slide to be retrieved
+     * @return the slide with the given id, or null if it does not exists
+     */
+    //Slide getSlideById (String id);
     
 }

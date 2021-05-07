@@ -7,5 +7,6 @@ import org.glygen.array.client.model.data.StatisticalMethod;
 public interface PublicUtilitiyClient {
     
     List<StatisticalMethod> getAllStatisticalMethods();
+    void setUrl(String url);
 
 }

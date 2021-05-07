@@ -119,7 +119,7 @@ public class Application implements CommandLineRunner {
 		        	if (view != null) {
     		        	view.setInternalId(glycan.getId()+ "");
     					view.setName(glycan.getName());
-    					view.setComment(glycan.getComment());
+    					view.setDescription(glycan.getComment());
     					try {
     						glycanClient.addGlycan(view);
     					} catch (HttpClientErrorException e) {

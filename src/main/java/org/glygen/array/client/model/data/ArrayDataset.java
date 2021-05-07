@@ -1,12 +1,15 @@
 package org.glygen.array.client.model.data;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import org.glygen.array.client.model.Creator;
+import org.glygen.array.client.model.Publication;
 import org.glygen.array.client.model.metadata.Sample;
 
-public class ArrayDataset {
+
+public class ArrayDataset extends FutureTask implements ChangeTrackable {
     String id;
     String uri;
     String name;
@@ -16,12 +19,11 @@ public class ArrayDataset {
     Sample sample;
     List<RawData> rawDataList;
     List<ProcessedData> processedData;
-    
-    // Should this become part of RawData only??
     List<Image> images;
-    
-    // Array dataset can have slides even when there is no raw data
     List<Slide> slides;
+    List<Publication> publications;
+    List<Creator> collaborators;
+    List<Grant> grants;
     
     boolean isPublic = false;
     Creator user;
@@ -29,6 +31,8 @@ public class ArrayDataset {
     Date dateModified;
     Date dateCreated;
     Date dateAddedToLibrary;
+    
+    List<ChangeLog> changes = new ArrayList<>();
 
     /**
      * @return the id
@@ -232,6 +236,76 @@ public class ArrayDataset {
      */
     public void setKeywords(List<String> keywords) {
         this.keywords = keywords;
+    }
+    
+    @Override
+    public FutureTaskStatus getStatus() {
+        if (this.processedData != null) {
+            for (ProcessedData p: this.processedData) {
+                if (p.getStatus() == FutureTaskStatus.PROCESSING)
+                    return FutureTaskStatus.PROCESSING;
+                if (p.getStatus() == FutureTaskStatus.ERROR)
+                    return FutureTaskStatus.PROCESSING;
+            }
+        }
+        return super.getStatus();
+    }
+
+    /**
+     * @return the publications
+     */
+    public List<Publication> getPublications() {
+        return publications;
+    }
+
+    /**
+     * @param publications the publications to set
+     */
+    public void setPublications(List<Publication> publications) {
+        this.publications = publications;
+    }
+
+    /**
+     * @return the collaborators
+     */
+    public List<Creator> getCollaborators() {
+        return collaborators;
+    }
+
+    /**
+     * @param collaborators the collaborators to set
+     */
+    public void setCollaborators(List<Creator> collaborators) {
+        this.collaborators = collaborators;
+    }
+
+    /**
+     * @return the grants
+     */
+    public List<Grant> getGrants() {
+        return grants;
+    }
+
+    /**
+     * @param grants the grants to set
+     */
+    public void setGrants(List<Grant> grants) {
+        this.grants = grants;
+    }
+
+    @Override
+    public List<ChangeLog> getChanges() {
+        return this.changes;
+    }
+
+    @Override
+    public void setChanges(List<ChangeLog> changes) {
+        this.changes = changes;
+    }
+
+    @Override
+    public void addChange(ChangeLog change) {
+        this.changes.add(change);
     }
 
 }

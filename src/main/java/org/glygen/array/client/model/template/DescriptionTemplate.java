@@ -1,15 +1,26 @@
 package org.glygen.array.client.model.template;
 
-public abstract class DescriptionTemplate {
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY)
+@JsonSubTypes({
+      @JsonSubTypes.Type(value = DescriptorTemplate.class),
+      @JsonSubTypes.Type(value = DescriptorGroupTemplate.class)})
+public abstract class DescriptionTemplate implements Comparable<DescriptionTemplate>{
     
     String uri;
     String id;
     String name;
     String description;
-    boolean mandatory;
+    Boolean mandatory;
     Integer maxOccurrence;
+    Integer order;
     String example;
     String wikiLink;
+    Integer mandateGroup = null;
+    Boolean xorMandate = true;
+    Boolean mirage = false;
     
     public abstract boolean isGroup();
 
@@ -125,4 +136,76 @@ public abstract class DescriptionTemplate {
         this.wikiLink = wikiLink;
     }
 
+    /**
+     * @return the mandateGroup
+     */
+    public Integer getMandateGroup() {
+        return mandateGroup;
+    }
+
+    /**
+     * @param mandateGroup the mandateGroup to set
+     */
+    public void setMandateGroup(Integer mandateGroup) {
+        this.mandateGroup = mandateGroup;
+    }
+
+    /**
+     * @return the mirage
+     */
+    public Boolean isMirage() {
+        return mirage;
+    }
+
+    /**
+     * @param mirage the mirage to set
+     */
+    public void setMirage(Boolean mirage) {
+        this.mirage = mirage;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj instanceof DescriptionTemplate) { 
+            if (this.id != null && ((DescriptionTemplate) obj).getId() != null) {
+                return this.id.equals(((DescriptionTemplate) obj).getId());
+            } else if (this.uri != null && ((DescriptionTemplate) obj).getUri() != null) {
+                return this.uri.equals(((DescriptionTemplate) obj).getUri());
+            }
+        } 
+        return super.equals(obj);
+    }
+
+    /**
+     * @return the xorMandate
+     */
+    public Boolean getXorMandate() {
+        return xorMandate;
+    }
+
+    /**
+     * @param xorMandate the xorMandate to set
+     */
+    public void setXorMandate(Boolean xorMandate) {
+        this.xorMandate = xorMandate;
+    }
+
+    /**
+     * @return the order
+     */
+    public Integer getOrder() {
+        return order;
+    }
+
+    /**
+     * @param order the order to set
+     */
+    public void setOrder(Integer order) {
+        this.order = order;
+    }
+    
+    @Override
+    public int compareTo(DescriptionTemplate o) {
+        return this.order.compareTo(o.order);
+    }
 }

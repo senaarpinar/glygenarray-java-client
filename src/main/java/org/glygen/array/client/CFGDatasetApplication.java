@@ -1,21 +1,19 @@
 package org.glygen.array.client;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.glygen.array.client.exception.CustomClientException;
-import org.glygen.array.client.model.ProcessedResultConfiguration;
 import org.glygen.array.client.model.User;
 import org.glygen.array.client.model.data.ArrayDataset;
 import org.glygen.array.client.model.data.FileWrapper;
+import org.glygen.array.client.model.data.Image;
 import org.glygen.array.client.model.data.PrintedSlide;
 import org.glygen.array.client.model.data.ProcessedData;
 import org.glygen.array.client.model.data.RawData;
 import org.glygen.array.client.model.data.Slide;
 import org.glygen.array.client.model.data.StatisticalMethod;
-import org.glygen.array.client.model.metadata.AssayMetadata;
-import org.glygen.array.client.model.metadata.DataProcessingSoftware;
-import org.glygen.array.client.model.metadata.ImageAnalysisSoftware;
 import org.glygen.array.client.model.metadata.Sample;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -24,13 +22,6 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
 import ch.qos.logback.classic.Logger;
 
@@ -74,7 +65,6 @@ public class CFGDatasetApplication implements CommandLineRunner {
             return;
         }
         
-        String statisticalMethod = "Eliminate";
         
         FileUploadClient fileClient = new FileUploadClientImpl();
         fileClient.setURL(url);
@@ -86,18 +76,14 @@ public class CFGDatasetApplication implements CommandLineRunner {
         datasetClient.setUsername(args[0]);
         datasetClient.setPassword(args[1]);
         
-        DataProcessingSoftware metadata = new DataProcessingSoftware();
-        metadata.setName("CFG Excel");
-        metadata.setDescription("CFG 5.2 Excel with Elimination");
-        metadata.setTemplate("Protein Dataprocessingsoftware");
+        PublicUtilitiyClient utilClient = new PublicUtilityClientImpl();
+        utilClient.setUrl(url);
         
-        String metadataId = null;
-        try {
-            metadataId = datasetClient.addDataProcessingMetadata(metadata, false);
-        } catch (CustomClientException e) {
-            System.out.println ("Error adding the data processing metadata: " + e.getBody());
-            // to see if we can retrieve it
-            metadataId = datasetClient.getDataProcessingMetadataByLabel ("CFG Excel");
+        StatisticalMethod method = null;
+        List<StatisticalMethod> methods = utilClient.getAllStatisticalMethods();
+        for (StatisticalMethod m: methods) {
+            if (m.getName().equalsIgnoreCase("eliminate"))
+                method = m;
         }
         
         String[] datasetFolders = dataFolder.list();
@@ -113,6 +99,9 @@ public class CFGDatasetApplication implements CommandLineRunner {
                         rawDataFile = filename;
                 }
                 
+                if (processedDataFile == null) //||  !processedDataFile.startsWith("unknown"))
+                    continue;
+                
                 String sampleName = processedDataFile.substring(0, processedDataFile.lastIndexOf(".xls"));
                 Sample sample = new Sample();
                 sample.setName(sampleName);
@@ -123,7 +112,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     String sampleId = datasetClient.getSampleByLabel(sampleName);
                     if (sampleId == null) {
                         try {
-                            sampleId = datasetClient.addSample(sample, false);
+                            sampleId = datasetClient.addSample(sample);
                         } catch (CustomClientException e1) {
                             System.out.println ("Error adding the sample: " + e1.getBody());
                         }
@@ -146,15 +135,6 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     FileWrapper file = null;
                     FileWrapper rawFile = null;
                     if (existing != null) {
-                        // check if we already uploaded this file
-                        for (ProcessedData data: existing.getProcessedData()) {
-                            if (data.getFile() != null) {
-                                if (data.getFile().getOriginalName().equals(processedDataFile)) {
-                                    // skip uploading
-                                    file = data.getFile();
-                                }
-                            }
-                        }
                         if (rawDataFile != null) {
                             for (RawData data: existing.getRawDataList()) {
                                 if (data.getFile() != null) {
@@ -163,41 +143,62 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                         rawFile = data.getFile();
                                     }
                                 }
+                                if (processedDataFile != null) {
+                                    for (ProcessedData processedData: data.getProcessedDataList()) {
+                                        if (processedData.getFile() != null) {
+                                            if (processedData.getFile().getOriginalName().equals(processedDataFile)) {
+                                                // skip uploading
+                                                file = processedData.getFile();
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                    /*if (file == null) {
-                        // upload the file
-                        file = fileClient.uploadFile(dataFolder.getPath() + File.separator + experimentName + File.separator + processedDataFile);
-                        file.setFileFormat("CFG 5.2");
-                        
-                        // add the processed data
-                        datasetClient.addProcessedDataFromExcel(file, statisticalMethod, datasetID, metadataId);
-                        log.debug("Added dataset " + datasetID + " for " + experimentName);
-                    }*/
+                    
+                    Slide slide = new Slide();
+                    PrintedSlide printedSlide = new PrintedSlide();
+                    printedSlide.setName("CFG5.2PrintedSlide");
+                    slide.setPrintedSlide(printedSlide);
+                    slide.setImages(new ArrayList<Image>());
+                    
+                    Image image = new Image();
+                    RawData rawData = new RawData();
+                    rawData.setProcessedDataList(new ArrayList<ProcessedData>());
+                    image.setRawData(rawData);
+                    slide.getImages().add(image);
                     
                     if (rawDataFile != null && rawFile == null) {
                         // upload the file
                         file = fileClient.uploadFile(dataFolder.getPath() + File.separator + experimentName + File.separator + rawDataFile);
                         file.setFileFormat("GenePix Results 3");
                         
-                        RawData rawData = new RawData();
                         rawData.setFile(file);
                         rawData.setPowerLevel(10.0);
-                        PrintedSlide printedSlide = new PrintedSlide();
-                        printedSlide.setName("CFG5.2Slide");
-                        Slide slide = new Slide();
-                        slide.setPrintedSlide(printedSlide);
-                        rawData.setSlide(slide); 
-                        AssayMetadata assayMetadata = new AssayMetadata();
-                        assayMetadata.setName("");   //TODO set the name to an existing one
-                        ImageAnalysisSoftware analyisMetadata = new ImageAnalysisSoftware();
-                        analyisMetadata.setName("CFGImageMetadata");
-                        rawData.setMetadata(analyisMetadata);
-                        slide.setMetadata(assayMetadata);
-                        datasetClient.addRawdataToDataset(rawData, datasetID);
                     }
+                    
+                    //if (file == null) {
+                        // upload the file
+                        file = fileClient.uploadFile(dataFolder.getPath() + File.separator + experimentName + File.separator + processedDataFile);
+                        file.setFileFormat("CFG_V5.2");
+                        
+                        ProcessedData processedData = new ProcessedData();
+                        processedData.setFile(file);
+                        processedData.setMethod(method);
+                        
+                        rawData.getProcessedDataList().add(processedData);
+                        
+                        // add slide
+                        String slideId = datasetClient.addSlideToDataset(slide, datasetID);
+                        log.info("Added slide " + slideId + " for " + datasetID);
+                     
+                    //}
+                } catch (CustomClientException e) { 
+                    System.out.println (e.getBody());
+                    System.out.println("Failed: " + dataFolder.getName() + File.separator + experimentName + File.separator + processedDataFile);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     System.out.println("Failed: " + dataFolder.getName() + File.separator + experimentName + File.separator + processedDataFile);
                 }
             }

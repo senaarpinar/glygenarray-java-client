@@ -1,5 +1,6 @@
 package org.glygen.array.client.model.data;
 
+import org.glygen.array.client.model.data.FileWrapper;
 import org.glygen.array.client.model.metadata.ScannerMetadata;
 
 public class Image {
@@ -9,6 +10,7 @@ public class Image {
     FileWrapper file;
     ScannerMetadata scanner; 
     String description;
+    RawData rawData;
     
     /**
      * @return the id
@@ -69,6 +71,18 @@ public class Image {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+    /**
+     * @return the rawData
+     */
+    public RawData getRawData() {
+        return rawData;
+    }
+    /**
+     * @param rawData the rawData to set
+     */
+    public void setRawData(RawData rawData) {
+        this.rawData = rawData;
     }
 
 }

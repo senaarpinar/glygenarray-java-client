@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.glygen.array.client.model.data.ChangeLog;
+import org.glygen.array.client.model.data.ChangeTrackable;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -21,12 +24,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 		@Type(value = Glycan.class, name = "CLASSIFICATION_BASED"),
 		@Type(value = Glycan.class, name = "FRAGMENT_ONLY")
 	})
-public class Glycan {
+public class Glycan implements ChangeTrackable{
 	String id;
 	String uri;
 	String internalId;
 	String name;
-	String comment;
+	String description;
 	Date dateModified;
 	Date dateCreated;
 	Date dateAddedToLibrary;
@@ -35,6 +38,10 @@ public class Glycan {
 	Creator owner;
 	Boolean isPublic = false;
 	byte[] cartoon;
+	
+	Boolean inUse = false;
+	
+	List<ChangeLog> changes = new ArrayList<>();
 	
 	public Boolean getIsPublic() {
 		return isPublic;
@@ -108,14 +115,14 @@ public class Glycan {
 	/**
 	 * @return the comment
 	 */
-	public String getComment() {
-		return comment;
+	public String getDescription() {
+		return description;
 	}
 	/**
 	 * @param comment the comment to set
 	 */
-	public void setComment(String comment) {
-		this.comment = comment;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 	
 	/**
@@ -195,4 +202,19 @@ public class Glycan {
 		
 		return super.hashCode();
 	}
+	
+	@Override
+    public List<ChangeLog> getChanges() {
+        return this.changes;
+    }
+
+    @Override
+    public void setChanges(List<ChangeLog> changes) {
+        this.changes = changes;
+    }
+
+    @Override
+    public void addChange(ChangeLog change) {
+        this.changes.add(change);
+    }
 }

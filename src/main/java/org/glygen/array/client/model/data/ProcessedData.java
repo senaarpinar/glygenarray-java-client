@@ -4,8 +4,7 @@ import java.util.List;
 
 import org.glygen.array.client.model.metadata.DataProcessingSoftware;
 
-
-public class ProcessedData {
+public class ProcessedData extends FutureTask {
     
     String id;
     String uri;
