@@ -14,8 +14,10 @@ import javax.xml.bind.annotation.XmlTransient;
 import org.springframework.validation.ObjectError;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @XmlRootElement(name="result")
+@JsonDeserialize(using = ErrorMessageDeserializer.class)
 public class ErrorMessage extends Error {
 	private static final long serialVersionUID = 1L;
 	final static String status = "error";
