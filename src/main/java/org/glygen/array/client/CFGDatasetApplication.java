@@ -8,6 +8,7 @@ import org.glygen.array.client.exception.CustomClientException;
 import org.glygen.array.client.model.User;
 import org.glygen.array.client.model.data.ArrayDataset;
 import org.glygen.array.client.model.data.FileWrapper;
+import org.glygen.array.client.model.data.FutureTaskStatus;
 import org.glygen.array.client.model.data.Image;
 import org.glygen.array.client.model.data.PrintedSlide;
 import org.glygen.array.client.model.data.ProcessedData;
@@ -135,18 +136,19 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     FileWrapper file = null;
                     FileWrapper rawFile = null;
                     if (existing != null) {
-                        if (rawDataFile != null) {
-                            for (RawData data: existing.getRawDataList()) {
-                                if (data.getFile() != null) {
-                                    if (data.getFile().getOriginalName().equals(rawDataFile)) {
-                                        // skip uploading
-                                        rawFile = data.getFile();
-                                    }
+                        for (Image image: existing.getImages()) {
+                            RawData data = image.getRawData();
+                            if (data.getFile() != null) {
+                                if (data.getFile().getOriginalName().equals(rawDataFile)) {
+                                    // skip uploading
+                                    rawFile = data.getFile();
                                 }
-                                if (processedDataFile != null) {
-                                    for (ProcessedData processedData: data.getProcessedDataList()) {
-                                        if (processedData.getFile() != null) {
-                                            if (processedData.getFile().getOriginalName().equals(processedDataFile)) {
+                            }
+                            if (processedDataFile != null) {
+                                for (ProcessedData processedData: data.getProcessedDataList()) {
+                                    if (processedData.getFile() != null) {
+                                        if (processedData.getFile().getOriginalName().equals(processedDataFile)) {
+                                            if (processedData.getStatus() == FutureTaskStatus.DONE) {
                                                 // skip uploading
                                                 file = processedData.getFile();
                                             }
@@ -178,7 +180,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
                         rawData.setPowerLevel(10.0);
                     }
                     
-                    //if (file == null) {
+                    if (file == null) {
                         // upload the file
                         file = fileClient.uploadFile(dataFolder.getPath() + File.separator + experimentName + File.separator + processedDataFile);
                         file.setFileFormat("CFG_V5.2");
@@ -191,9 +193,9 @@ public class CFGDatasetApplication implements CommandLineRunner {
                         
                         // add slide
                         String slideId = datasetClient.addSlideToDataset(slide, datasetID);
-                        log.info("Added slide " + slideId + " for " + datasetID);
+                        log.info("Added slide " + slideId + " for " + datasetID + " folder: " + experimentFolder);
                      
-                    //}
+                    }
                 } catch (CustomClientException e) { 
                     System.out.println (e.getBody());
                     System.out.println("Failed: " + dataFolder.getName() + File.separator + experimentName + File.separator + processedDataFile);

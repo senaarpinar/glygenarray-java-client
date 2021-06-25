@@ -6,13 +6,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 
 public class Feature {
 	String id;
 	String uri;
 	String name;
+	String internalId;
 	List<Glycan> glycans;
 	Linker linker;
 	
@@ -160,5 +160,16 @@ public class Feature {
 	
 	public FeatureType getType() {
         return type;
+    }
+	
+	public String getInternalId() {
+        return internalId;
+    }
+
+    /**
+     * @param internalId the internalId to set
+     */
+    public void setInternalId(String internalId) {
+        this.internalId = internalId;
     }
 }
