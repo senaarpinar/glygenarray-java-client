@@ -3,10 +3,6 @@ package org.glygen.array.client.model;
 import java.util.Date;
 import java.util.List;
 
-import org.glygen.array.client.GlycanRestClient;
-
-
-
 public class BlockLayout {
 	String id;
 	String uri;
@@ -17,10 +13,11 @@ public class BlockLayout {
 	List<Spot> spots;
 	Date dateCreated;
 	Date dateModified;
+	
+	Boolean inUse = false;
 	/**
 	 * @return the name
 	 */
-	
 	
 	public String getName() {
 		return name;
@@ -34,7 +31,6 @@ public class BlockLayout {
 	/**
 	 * @return the description
 	 */
-	
 	public String getDescription() {
 		return description;
 	}
@@ -47,7 +43,6 @@ public class BlockLayout {
 	/**
 	 * @return the width
 	 */
-	
 	public Integer getWidth() {
 		return width;
 	}
@@ -60,7 +55,6 @@ public class BlockLayout {
 	/**
 	 * @return the height
 	 */
-	
 	public Integer getHeight() {
 		return height;
 	}
@@ -101,9 +95,6 @@ public class BlockLayout {
 		return id;
 	}
 	
-	public void setURIfromId (String id) {
-		this.uri = GlycanRestClient.uriPrefix + id;
-	}
 	/**
 	 * @return the dateCreated
 	 */

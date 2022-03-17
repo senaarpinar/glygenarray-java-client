@@ -16,17 +16,22 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 		include = JsonTypeInfo.As.PROPERTY, 
 		property = "type")
 	@JsonSubTypes({ 
-		@Type(value = SmallMoleculeLinker.class, name = "SMALLMOLECULE_LINKER"), 
-		@Type(value = PeptideLinker.class, name = "PEPTIDE_LINKER"),
-		@Type(value = ProteinLinker.class, name = "PROTEIN_LINKER")
+		@Type(value = SmallMoleculeLinker.class, name = "SMALLMOLECULE"), 
+		@Type(value = PeptideLinker.class, name = "PEPTIDE"),
+		@Type(value = ProteinLinker.class, name = "PROTEIN"),
+		@Type(value = Lipid.class, name = "LIPID"),
+		@Type(value = SmallMoleculeLinker.class, name = "UNKNOWN_SMALLMOLECULE"), 
+        @Type(value = PeptideLinker.class, name = "UNKNOWN_PEPTIDE"),
+        @Type(value = ProteinLinker.class, name = "UNKNOWN_PROTEIN"),
+        @Type(value = Lipid.class, name = "UNKNOWN_LIPID"),
+		@Type(value = OtherLinker.class, name = "OTHER")
 	})
 public abstract class Linker implements ChangeTrackable {
 	String id;
 	String uri;
 	String name;
-	String comment;
+	//String comment;
 	String description;
-	Integer opensRing;    /* 0 does not open ring, 1 opens ring, 2 unknown */
 	Date dateModified;
 	Date dateCreated;
 	Date dateAddedToLibrary;
@@ -35,8 +40,7 @@ public abstract class Linker implements ChangeTrackable {
 	LinkerType type;
 	Creator user;
     Boolean isPublic = false;
-    
-    Boolean inUse = false;
+    Source source;
 	
     List<ChangeLog> changes = new ArrayList<ChangeLog>();
     
@@ -79,15 +83,16 @@ public abstract class Linker implements ChangeTrackable {
 	/**
 	 * @return the comment
 	 */
-	public String getComment() {
-		return comment;
-	}
+	//@Size(max=ValidationConstants.DESCRIPTION_LIMIT, message="Description cannot exceed " + ValidationConstants.DESCRIPTION_LIMIT + " characters")
+	//public String getComment() {
+	//	return comment;
+	//}
 	/**
 	 * @param comment the comment to set
 	 */
-	public void setComment(String comment) {
-		this.comment = comment;
-	}
+	//public void setComment(String comment) {
+	//	this.comment = comment;
+	//}
 	
 	/**
 	 * @return the uri
@@ -136,14 +141,6 @@ public abstract class Linker implements ChangeTrackable {
 	 */
 	public void setDateAddedToLibrary(Date dateAddedToLibrary) {
 		this.dateAddedToLibrary = dateAddedToLibrary;
-	}
-	
-	public void setOpensRing(Integer opensRing) {
-		this.opensRing = opensRing;
-	}
-	
-	public Integer getOpensRing() {
-		return opensRing;
 	}
 	
 	public LinkerType getType() {
@@ -226,6 +223,20 @@ public abstract class Linker implements ChangeTrackable {
     @Override
     public void addChange(ChangeLog change) {
         this.changes.add(change);
+    }
+
+    /**
+     * @return the source
+     */
+    public Source getSource() {
+        return source;
+    }
+
+    /**
+     * @param source the source to set
+     */
+    public void setSource(Source source) {
+        this.source = source;
     }
 
 }

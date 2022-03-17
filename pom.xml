@@ -54,20 +54,16 @@
 	    <version>1.18</version>
 	</dependency>
 	<dependency>
-		  <groupId>eurocarb</groupId>
-		  <artifactId>eurocarb-glycanbuilder</artifactId>
-		  <version>1.0rc</version>
-	</dependency>
-	<dependency>
-		  <groupId>eurocarb</groupId>
-		  <artifactId>eurocarb-glycoworkbench</artifactId>
-		  <version>1.0rc</version>
-	</dependency>
-	<dependency>
-	  <groupId>eurocarb</groupId>
-	  <artifactId>eurocarb-molecularframework</artifactId>
-	  <version>1.0rc</version>
-	</dependency>
+			<groupId>org.eurocarbdb.glycanbuilder</groupId>
+			<artifactId>glycanbuilder2</artifactId>
+			<version>1.12.0</version>
+			<exclusions>
+		        <exclusion>
+		            <groupId>log4j</groupId>
+		            <artifactId>log4j</artifactId>
+		        </exclusion>
+		    </exclusions>
+		</dependency>
 	<dependency>
 	  <groupId>resourcesdb</groupId>
 	  <artifactId>resourcesdb_interfaces</artifactId>
@@ -84,6 +80,22 @@
 	    <artifactId>log4j</artifactId>
 	    <version>1.2.17</version>
 	</dependency>
+	<!--  GlycoInfo -->
+		<dependency>
+		  <groupId>glycoinfo</groupId>
+		  <artifactId>converter</artifactId>
+		  <version>2.6.0</version>
+		</dependency>
+		<dependency>
+		  <groupId>glycoinfo</groupId>
+		  <artifactId>molecular</artifactId>
+		  <version>0.1.37</version>
+		</dependency>
+		<dependency>
+		  <groupId>glycoinfo</groupId>
+		  <artifactId>wurcs</artifactId>
+		  <version>1.0.1</version>
+		</dependency>
   </dependencies>
   
   <build>

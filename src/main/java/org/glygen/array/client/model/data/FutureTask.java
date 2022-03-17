@@ -4,7 +4,6 @@ import java.util.Date;
 
 import org.glygen.array.client.model.ErrorMessage;
 
-
 public class FutureTask {
     
     FutureTaskStatus status = FutureTaskStatus.DONE;

@@ -8,22 +8,18 @@ import org.glygen.array.client.model.Creator;
 import org.glygen.array.client.model.Publication;
 import org.glygen.array.client.model.metadata.Sample;
 
-
 public class ArrayDataset extends FutureTask implements ChangeTrackable {
     String id;
     String uri;
     String name;
     String description;
-    List<String> keywords;
-    
+   
     Sample sample;
-    List<RawData> rawDataList;
-    List<ProcessedData> processedData;
-    List<Image> images;
     List<Slide> slides;
     List<Publication> publications;
     List<Creator> collaborators;
     List<Grant> grants;
+    List<String> keywords;
     
     boolean isPublic = false;
     Creator user;
@@ -31,6 +27,9 @@ public class ArrayDataset extends FutureTask implements ChangeTrackable {
     Date dateModified;
     Date dateCreated;
     Date dateAddedToLibrary;
+    
+    String publicURI;
+    String publicId;
     
     List<ChangeLog> changes = new ArrayList<>();
 
@@ -102,42 +101,6 @@ public class ArrayDataset extends FutureTask implements ChangeTrackable {
      */
     public void setSample(Sample sample) {
         this.sample = sample;
-    }
-
-    public List<RawData> getRawDataList() {
-        return rawDataList;
-    }
-    
-    public void setRawDataList(List<RawData> rawDataList) {
-        this.rawDataList = rawDataList;
-    }
-
-    /**
-     * @return the processedData
-     */
-    public List<ProcessedData> getProcessedData() {
-        return processedData;
-    }
-
-    /**
-     * @param processedData the processedData to set
-     */
-    public void setProcessedData(List<ProcessedData> processedData) {
-        this.processedData = processedData;
-    }
-
-    /**
-     * @return the images
-     */
-    public List<Image> getImages() {
-        return images;
-    }
-
-    /**
-     * @param images the images to set
-     */
-    public void setImages(List<Image> images) {
-        this.images = images;
     }
 
     /**
@@ -240,15 +203,7 @@ public class ArrayDataset extends FutureTask implements ChangeTrackable {
     
     @Override
     public FutureTaskStatus getStatus() {
-        if (this.processedData != null) {
-            for (ProcessedData p: this.processedData) {
-                if (p.getStatus() == FutureTaskStatus.PROCESSING)
-                    return FutureTaskStatus.PROCESSING;
-                if (p.getStatus() == FutureTaskStatus.ERROR)
-                    return FutureTaskStatus.PROCESSING;
-            }
-        }
-        return super.getStatus();
+        return status;
     }
 
     /**
@@ -306,6 +261,37 @@ public class ArrayDataset extends FutureTask implements ChangeTrackable {
     @Override
     public void addChange(ChangeLog change) {
         this.changes.add(change);
+    }
+
+    /**
+     * @return the publicURI
+     */
+    public String getPublicURI() {
+        return publicURI;
+    }
+
+    /**
+     * @param publicURI the publicURI to set
+     */
+    public void setPublicURI(String publicURI) {
+        this.publicURI = publicURI;
+    }
+
+    /**
+     * @return the publicId
+     */
+    public String getPublicId() {
+        if (publicURI != null) {
+            return publicURI.substring(publicURI.lastIndexOf("/")+1);
+        }
+        return publicId;
+    }
+
+    /**
+     * @param publicId the publicId to set
+     */
+    public void setPublicId(String publicId) {
+        this.publicId = publicId;
     }
 
 }

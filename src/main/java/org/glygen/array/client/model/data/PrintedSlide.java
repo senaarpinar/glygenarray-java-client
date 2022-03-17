@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.glygen.array.client.model.Creator;
 import org.glygen.array.client.model.SlideLayout;
+import org.glygen.array.client.model.metadata.PrintRun;
 import org.glygen.array.client.model.metadata.Printer;
 import org.glygen.array.client.model.metadata.SlideMetadata;
 
@@ -15,6 +16,7 @@ public class PrintedSlide {
     SlideLayout layout;
     SlideMetadata metadata;
     Printer printer;
+    PrintRun printRun;
     
     boolean isPublic = false;
     Creator user;
@@ -180,5 +182,17 @@ public class PrintedSlide {
      */
     public void setInUse(Boolean inUse) {
         this.inUse = inUse;
+    }
+    /**
+     * @return the printRun
+     */
+    public PrintRun getPrintRun() {
+        return printRun;
+    }
+    /**
+     * @param printRun the printRun to set
+     */
+    public void setPrintRun(PrintRun printRun) {
+        this.printRun = printRun;
     }
 }

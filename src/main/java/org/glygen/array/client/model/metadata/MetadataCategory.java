@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.glygen.array.client.model.Creator;
 
-
 public class MetadataCategory {
     String id;
     String uri;

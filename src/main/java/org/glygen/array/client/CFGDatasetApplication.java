@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.glygen.array.client.exception.CustomClientException;
+import org.glygen.array.client.model.SlideLayout;
 import org.glygen.array.client.model.User;
 import org.glygen.array.client.model.data.ArrayDataset;
 import org.glygen.array.client.model.data.FileWrapper;
@@ -23,6 +24,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.qos.logback.classic.Logger;
 
@@ -135,27 +138,33 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     
                     FileWrapper file = null;
                     FileWrapper rawFile = null;
-                    if (existing != null) {
-                        for (Image image: existing.getImages()) {
-                            RawData data = image.getRawData();
-                            if (data.getFile() != null) {
-                                if (data.getFile().getOriginalName().equals(rawDataFile)) {
-                                    // skip uploading
-                                    rawFile = data.getFile();
-                                }
-                            }
-                            if (processedDataFile != null) {
-                                for (ProcessedData processedData: data.getProcessedDataList()) {
-                                    if (processedData.getFile() != null) {
-                                        if (processedData.getFile().getOriginalName().equals(processedDataFile)) {
-                                            if (processedData.getStatus() == FutureTaskStatus.DONE) {
-                                                // skip uploading
-                                                file = processedData.getFile();
+                    if (existing != null && existing.getSlides() != null) {
+                        for (Slide slide: existing.getSlides()) {
+                            if (slide.getImages() == null) continue;
+                            for (Image image: slide.getImages()) {
+                                if (image.getRawDataList() == null) continue;
+                                for (RawData data: image.getRawDataList()) {
+                                    if (data.getFile() != null) {
+                                        if (data.getFile().getOriginalName().equals(rawDataFile)) {
+                                            // skip uploading
+                                            rawFile = data.getFile();
+                                        }
+                                    }
+                                    if (processedDataFile != null) {
+                                        if (data.getProcessedDataList() == null) continue;
+                                        for (ProcessedData processedData: data.getProcessedDataList()) {
+                                            if (processedData.getFile() != null) {
+                                                if (processedData.getFile().getOriginalName().equals(processedDataFile)) {
+                                                    if (processedData.getStatus() == FutureTaskStatus.DONE) {
+                                                        // skip uploading
+                                                        file = processedData.getFile();
+                                                    }
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
+                            }   
                         }
                     }
                     
@@ -168,8 +177,9 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     Image image = new Image();
                     RawData rawData = new RawData();
                     rawData.setProcessedDataList(new ArrayList<ProcessedData>());
-                    image.setRawData(rawData);
+                    image.addRawData(rawData);
                     slide.getImages().add(image);
+                    //rawData.setSlide(slide);
                     
                     if (rawDataFile != null && rawFile == null) {
                         // upload the file
@@ -193,8 +203,29 @@ public class CFGDatasetApplication implements CommandLineRunner {
                         
                         // add slide
                         String slideId = datasetClient.addSlideToDataset(slide, datasetID);
+                        slide.setId(slideId);
+                        // add image
+                        if (slideId != null) {
+                            String imageId = datasetClient.addImageToSlide(image, slideId, datasetID);
+                            image.setId(imageId);
+                            if (imageId != null) {
+                                String rawDataId = datasetClient.addRawDataToImage(rawData, imageId, datasetID);
+                                rawData.setId(rawDataId);
+                                if (rawDataId != null) {
+                                    String processedDataId = datasetClient.addProcessedDataToRawData(processedData, rawDataId, datasetID);
+                                    processedData.setId(processedDataId);
+                                }
+                            }
+                        }
                         log.info("Added slide " + slideId + " for " + datasetID + " folder: " + experimentFolder);
-                     
+                        List<Slide> slides = new ArrayList<Slide>();
+                        slides.add(slide);
+                        ArrayDataset datasetSample = new ArrayDataset();
+                        datasetSample.setName("testDataset");
+                        datasetSample.setDescription("descripton1");
+                        datasetSample.setSlides(slides);
+                        String jsonValue = new ObjectMapper().writeValueAsString(datasetSample);
+                        System.out.println(jsonValue);
                     }
                 } catch (CustomClientException e) { 
                     System.out.println (e.getBody());

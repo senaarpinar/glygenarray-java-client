@@ -1,7 +1,6 @@
 package org.glygen.array.client;
 
 import java.util.List;
-import java.util.Map;
 
 import org.glygen.array.client.model.BlockLayout;
 import org.glygen.array.client.model.Feature;
@@ -10,7 +9,7 @@ import org.glygen.array.client.model.ImportGRITSLibraryResult;
 import org.glygen.array.client.model.Linker;
 import org.glygen.array.client.model.LinkerClassification;
 import org.glygen.array.client.model.SlideLayout;
-import org.grits.toolbox.glycanarray.library.om.ArrayDesignLibrary;
+import org.glygen.array.client.model.data.FileWrapper;
 
 public interface GlycanRestClient {
 	
@@ -76,10 +75,8 @@ public interface GlycanRestClient {
 	
 	/** 
 	 * 
-	 * @param library library file to get slide layout
-	 * @param linkerClassificationMap TODO
-	 * @param layout layout name to import, if null, all slide layouts will be imported
+	 * @param file library file to get slide layouts
 	 * @return a result object with the added slide layouts, errors and duplicates
 	 */
-	public ImportGRITSLibraryResult addFromLibrary (ArrayDesignLibrary library, Map<String, String> linkerClassificationMap, String layout);
+    ImportGRITSLibraryResult addFromLibrary(FileWrapper file);
 }

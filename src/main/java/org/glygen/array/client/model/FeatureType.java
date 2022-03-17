@@ -1,7 +1,13 @@
 package org.glygen.array.client.model;
 
 public enum FeatureType {
-    NORMAL,
+    LINKEDGLYCAN,
+    GLYCOLIPID,
+    GLYCOPEPTIDE,
+    GLYCOPROTEIN,
+    GPLINKEDGLYCOPEPTIDE,
     CONTROL,
+    NEGATIVE_CONTROL,
+    COMPOUND,
     LANDING_LIGHT;
 }

@@ -8,7 +8,7 @@ public class ProteinLinker extends SequenceBasedLinker {
 	List<String> pdbIds;
 	
 	public ProteinLinker() {
-		this.type = LinkerType.PROTEIN_LINKER;
+		this.type = LinkerType.PROTEIN;
 	}
 
 	/**

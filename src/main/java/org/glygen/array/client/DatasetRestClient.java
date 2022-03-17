@@ -1,7 +1,10 @@
 package org.glygen.array.client;
 
 import org.glygen.array.client.model.data.ArrayDataset;
+import org.glygen.array.client.model.data.Image;
 import org.glygen.array.client.model.data.PrintedSlide;
+import org.glygen.array.client.model.data.ProcessedData;
+import org.glygen.array.client.model.data.RawData;
 import org.glygen.array.client.model.data.Slide;
 import org.glygen.array.client.model.metadata.AssayMetadata;
 import org.glygen.array.client.model.metadata.DataProcessingSoftware;
@@ -120,6 +123,10 @@ public interface DatasetRestClient {
      * @return the array dataset of null if not found
      */
     ArrayDataset getDatasetByLabel (String name);
+
+    String addImageToSlide(Image image, String slideId, String datasetId);
+    String addRawDataToImage(RawData rawData, String imageId, String datasetId);
+    String addProcessedDataToRawData(ProcessedData processedData, String rawDataId, String datasetId);
     
     /**
      * return slide given its id

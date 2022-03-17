@@ -3,8 +3,10 @@ package org.glygen.array.client.model;
 import java.util.Date;
 import java.util.List;
 
+import org.glygen.array.client.model.data.FileWrapper;
+import org.glygen.array.client.model.data.FutureTask;
 
-public class SlideLayout {
+public class SlideLayout extends FutureTask {
 	String id;
 	String uri;
 	String name;
@@ -17,6 +19,10 @@ public class SlideLayout {
 	Date dateAddedToLibrary;
 	Creator user;
 	Boolean isPublic = false;
+	
+	Boolean inUse = false;
+	
+	FileWrapper file;
 	/**
 	 * @return the name
 	 */
@@ -145,6 +151,18 @@ public class SlideLayout {
 	public void setIsPublic(Boolean isPublic) {
 		this.isPublic = isPublic;
 	}
+    /**
+     * @return the file
+     */
+    public FileWrapper getFile() {
+        return file;
+    }
+    /**
+     * @param file the file to set
+     */
+    public void setFile(FileWrapper file) {
+        this.file = file;
+    }
 
 	
 }

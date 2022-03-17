@@ -6,23 +6,51 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
+import org.glygen.array.client.model.data.ChangeLog;
+import org.glygen.array.client.model.data.ChangeTrackable;
+import org.glygen.array.client.model.metadata.FeatureMetadata;
 
-public class Feature {
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+
+
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME, 
+        include = JsonTypeInfo.As.PROPERTY, 
+        property = "type")
+    @JsonSubTypes({ 
+        @Type(value = LinkedGlycan.class, name = "LINKEDGLYCAN"), 
+        @Type(value = GlycoLipid.class, name = "GLYCOLIPID"),
+        @Type(value = GlycoPeptide.class, name = "GLYCOPEPTIDE"),
+        @Type(value = GlycoProtein.class, name = "GLYCOPROTEIN"),
+        @Type(value = GPLinkedGlycoPeptide.class, name = "GPLINKEDGLYCOPEPTIDE"),
+        @Type(value = LandingLight.class, name = "LANDING_LIGHT"),
+        @Type(value = ControlFeature.class, name = "CONTROL"),
+        @Type(value = NegControlFeature.class, name = "NEGATIVE_CONTROL"),
+        @Type(value = CompoundFeature.class, name = "COMPOUND")
+    })
+public class Feature implements ChangeTrackable {
 	String id;
 	String uri;
 	String name;
 	String internalId;
-	List<Glycan> glycans;
+	String description;
 	Linker linker;
+	FeatureMetadata metadata;
 	
 	Map<String, String> positionMap = new HashMap<>(); // position to glycanId map
 	
-	FeatureType type = FeatureType.NORMAL;
+	FeatureType type;
 	
 	Date dateModified;
 	Date dateCreated;
 	Date dateAddedToLibrary;
+	
+	List<ChangeLog> changes = new ArrayList<ChangeLog>();
+
+	Boolean inUse = false;
 	
 	public String getId() {
 		return id;
@@ -53,24 +81,7 @@ public class Feature {
 	public String getGlycan (String position) {
 		return positionMap.get(position);
 	}
-	/**
-	 * @return the glycan
-	 */
-	public List<Glycan> getGlycans() {
-		return glycans;
-	}
-	/**
-	 * @param glycan the glycan to set
-	 */
-	public void setGlycans(List<Glycan>glycan) {
-		this.glycans = glycan;
-	}
 	
-	public void addGlycan (Glycan glycan) {
-		if (this.glycans == null)
-			glycans = new ArrayList<Glycan>();
-		glycans.add(glycan);
-	}
 	/**
 	 * @return the linker
 	 */
@@ -161,7 +172,10 @@ public class Feature {
 	public FeatureType getType() {
         return type;
     }
-	
+
+    /**
+     * @return the internalId
+     */
 	public String getInternalId() {
         return internalId;
     }
@@ -171,5 +185,55 @@ public class Feature {
      */
     public void setInternalId(String internalId) {
         this.internalId = internalId;
+    }
+
+    /**
+     * @return the metadata
+     */
+    public FeatureMetadata getMetadata() {
+        return metadata;
+    }
+
+    /**
+     * @param metadata the metadata to set
+     */
+    public void setMetadata(FeatureMetadata metadata) {
+        this.metadata = metadata;
+    }
+    
+    @Override
+    public List<ChangeLog> getChanges() {
+        return this.changes;
+    }
+
+    @Override
+    public void setChanges(List<ChangeLog> changes) {
+        this.changes = changes;
+    }
+
+    @Override
+    public void addChange(ChangeLog change) {
+        this.changes.add(change);
+    }
+
+    /**
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * @param description the description to set
+     */
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    
+    @Override
+    public int hashCode() {
+        if (uri != null)
+            return uri.hashCode();
+        return super.hashCode();
     }
 }

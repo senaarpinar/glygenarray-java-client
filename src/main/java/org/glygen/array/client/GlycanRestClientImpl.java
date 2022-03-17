@@ -18,6 +18,7 @@ import org.glygen.array.client.model.Glycan;
 import org.glygen.array.client.model.GlycanSequenceFormat;
 import org.glygen.array.client.model.GlycanType;
 import org.glygen.array.client.model.ImportGRITSLibraryResult;
+import org.glygen.array.client.model.LibraryImportInput;
 import org.glygen.array.client.model.Linker;
 import org.glygen.array.client.model.LinkerClassification;
 import org.glygen.array.client.model.LoginRequest;
@@ -25,6 +26,7 @@ import org.glygen.array.client.model.SequenceDefinedGlycan;
 import org.glygen.array.client.model.SlideLayout;
 import org.glygen.array.client.model.SmallMoleculeLinker;
 import org.glygen.array.client.model.UnknownGlycan;
+import org.glygen.array.client.model.data.FileWrapper;
 import org.grits.toolbox.glycanarray.library.om.ArrayDesignLibrary;
 import org.grits.toolbox.glycanarray.library.om.LibraryInterface;
 import org.grits.toolbox.glycanarray.library.om.feature.GlycanProbe;
@@ -292,298 +294,58 @@ public class GlycanRestClientImpl implements GlycanRestClient {
      * {@inheritDoc}
      */
     @Override
-    public ImportGRITSLibraryResult addFromLibrary(ArrayDesignLibrary library, Map<String, String> linkerClassificationMap, String layoutName) {
+    public ImportGRITSLibraryResult addFromLibrary(FileWrapper file) {
         ImportGRITSLibraryResult result = new ImportGRITSLibraryResult();
-        // add Glycans
-        List<org.grits.toolbox.glycanarray.library.om.feature.Glycan> glycanList = library.getFeatureLibrary().getGlycan();
-        List<org.grits.toolbox.glycanarray.library.om.feature.Linker> linkerList = library.getFeatureLibrary().getLinker();
-        List<org.grits.toolbox.glycanarray.library.om.feature.Feature> features = library.getFeatureLibrary().getFeature();
-        List<org.grits.toolbox.glycanarray.library.om.layout.BlockLayout> blockLayouts = library.getLayoutLibrary().getBlockLayout();
-        List<org.grits.toolbox.glycanarray.library.om.layout.SlideLayout> layouts = library.getLayoutLibrary().getSlideLayout();
         
-        if (layoutName != null) {
-        	for (org.grits.toolbox.glycanarray.library.om.layout.SlideLayout l: library.getLayoutLibrary().getSlideLayout()) {
-        		if (l.getName().equalsIgnoreCase(layoutName)) {
-        			layouts.clear();
-        			layouts.add(l);
-        			blockLayouts.clear();
-        			glycanList.clear();
-        			linkerList.clear();
-        			features.clear();
-        			for (Block b: l.getBlock()) {
-        				String blockLayoutName = b.getBlockName();
-        				for (org.grits.toolbox.glycanarray.library.om.layout.BlockLayout bl: 
-        					library.getLayoutLibrary().getBlockLayout()) {
-        					if (blockLayoutName.equals(bl.getName())) {
-        						if (!blockLayouts.contains(bl)) {
-        							blockLayouts.add(bl);
-        							for (Spot s: bl.getSpot()) {
-        								for (org.grits.toolbox.glycanarray.library.om.feature.Feature f: 
-        									library.getFeatureLibrary().getFeature()) {
-        									if (f.getId() == s.getFeatureId()) {
-        										if (!features.contains(f)) {
-        											features.add(f);
-        											for (Ratio ratio : f.getRatio()) {
-        						                        GlycanProbe probe = null;
-        						                        for (GlycanProbe p : library.getFeatureLibrary().getGlycanProbe()) {
-        						                            if (p.getId().equals(ratio.getItemId())) {
-        						                                probe = p;
-        						                                break;
-        						                            }
-        						                        }
-        						                        if (probe != null) {
-        						                            for (Ratio r1 : probe.getRatio()) {
-        						                                org.grits.toolbox.glycanarray.library.om.feature.Glycan glycan = LibraryInterface.getGlycan(library, r1.getItemId());
-        						                                if (!glycanList.contains(glycan)) {
-        						                                	glycanList.add(glycan);
-        						                                }
-        						                                org.grits.toolbox.glycanarray.library.om.feature.Linker linker = LibraryInterface.getLinker(library, probe.getLinker());
-        						                                if (!linkerList.contains(linker)) {
-        						                                	linkerList.add(linker);
-        						                                }
-        						                            }
-        						                        }
-        											}
-        										}
-        									}
-        								}
-        							}
-        						}
-        					}
-        				}
-        			}
-        		}
-        	}
-        }
-        
-        // add glycans
-        for (org.grits.toolbox.glycanarray.library.om.feature.Glycan glycan : glycanList) {
-            Glycan view = null;
-            if (glycan.getSequence() == null) {
-                if (glycan.getOrigSequence() == null && (glycan.getClassification() == null || glycan.getClassification().isEmpty())) {
-                    // this is not a glycan, control or a flag
-                } else {
-                    view = new UnknownGlycan();
-                }
-            } else {
-                view = new SequenceDefinedGlycan();
-                ((SequenceDefinedGlycan) view).setGlytoucanId(glycan.getGlyTouCanId());
-                ((SequenceDefinedGlycan) view).setSequence(glycan.getSequence());
-                ((SequenceDefinedGlycan) view).setSequenceType(GlycanSequenceFormat.GLYCOCT);
-            }
-            if (view != null) {
-                view.setInternalId(glycan.getId()+ "");
-                view.setName(glycan.getName());
-                view.setDescription(glycan.getComment());
+        //set the header with token
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        String url = this.url + "array/getSlideLayoutFromLibrary?file=" + file.getIdentifier();
+        String addUrl = this.url + "array/addSlideLayoutFromLibrary";
+        try {
+            // get the list of slide layouts in the file
+            ResponseEntity<List> response = this.restTemplate.exchange(url, HttpMethod.GET, null, List.class);
+            List layoutList = response.getBody();
+            for (Object item: layoutList) {
+                SlideLayout layout = (SlideLayout)item;
+                // add the slide layout
+                LibraryImportInput input = new LibraryImportInput();
+                input.setFile(file);
+                input.setSlideLayout(layout);
+                HttpEntity<LibraryImportInput> requestEntity = new HttpEntity<LibraryImportInput>(input, headers);
                 try {
-                    addGlycan(view);
-                } catch (HttpClientErrorException e) {
-                    System.out.println("Glycan " + glycan.getId() + " cannot be added. Reason: " + e.getMessage());
-                }
-            }
-        }
-        
-        // add Linkers 
-        List<LinkerClassification> classificationList = getLinkerClassifications();
-        for (org.grits.toolbox.glycanarray.library.om.feature.Linker linker : linkerList) {
-            SmallMoleculeLinker view = new SmallMoleculeLinker();
-            if (linker.getPubChemId() != null) view.setPubChemId(linker.getPubChemId().longValue());
-            view.setName(linker.getName());
-            if (linker.getSequence() != null)
-                view.setDescription(linker.getSequence());
-            view.setComment(linker.getComment());
-            if (linker.getPubChemId() == null) {
-                String classification = linkerClassificationMap.get(linker.getName());
-                if (classification != null) {
-                    LinkerClassification lClass = new LinkerClassification();
-                    lClass.setClassification(classification);
-                    view.setClassification(lClass);
-                }
-                else {   
-                    // assign a random classification
-                    Collections.shuffle(classificationList);
-                    view.setClassification((LinkerClassification) classificationList.get(0));
-                }
-            }
-            try {
-                addLinker(view);
-            } catch (HttpClientErrorException e) {
-                System.out.println ("Linker " + linker.getId() + " cannot be added. Reason:" + e.getMessage());
-            }
-        }
-        
-        // add Features   
-        for (org.grits.toolbox.glycanarray.library.om.feature.Feature f: features) {
-            Feature myFeature = new Feature();
-            myFeature.setName(f.getName());
-            List<Ratio> ratios = f.getRatio();
-            for (Ratio ratio : ratios) {
-                GlycanProbe probe = null;
-                for (GlycanProbe p : library.getFeatureLibrary().getGlycanProbe()) {
-                    if (p.getId().equals(ratio.getItemId())) {
-                        probe = p;
-                        break;
-                    }
-                }
-                if (probe != null) {
-                    boolean linkerOnly = true;
-                    for (Ratio r1 : probe.getRatio()) {
-                        org.grits.toolbox.glycanarray.library.om.feature.Glycan glycan = LibraryInterface.getGlycan(library, r1.getItemId());
-                        if (glycan != null) {
-                            org.glygen.array.client.model.Glycan myGlycan = null;
-                            if (glycan.getSequence() == null) {
-                                myGlycan = new UnknownGlycan();
-                                myGlycan.setName(glycan.getName()); // name is sufficient to locate the unknown glycan
-                            } else {
-                                myGlycan = new org.glygen.array.client.model.SequenceDefinedGlycan();
-                                ((SequenceDefinedGlycan) myGlycan).setSequence(glycan.getSequence());  // sequence is sufficient to locate this Glycan in the repository
-                                ((SequenceDefinedGlycan) myGlycan).setSequenceType(GlycanSequenceFormat.GLYCOCT);
-                            }
-                            myFeature.addGlycan(myGlycan);
-                            myFeature.setType(FeatureType.NORMAL);
-                            linkerOnly = false;
-                        }
-                        
-                    }
-                    org.grits.toolbox.glycanarray.library.om.feature.Linker linker = LibraryInterface.getLinker(library, probe.getLinker());
-                    if (linker != null) {
-                        org.glygen.array.client.model.SmallMoleculeLinker myLinker = new org.glygen.array.client.model.SmallMoleculeLinker();
-                        if (linker.getPubChemId() != null) myLinker.setPubChemId(linker.getPubChemId().longValue());  // pubChemId is sufficient to locate this Linker in the repository
-                        else {
-                            // need to set classification and name
-                            myLinker.setName(linker.getName());
-                            String classification = linkerClassificationMap.get(linker.getName());
-                            if (classification != null) {
-                                LinkerClassification lClass = new LinkerClassification();
-                                lClass.setClassification(classification);
-                                myLinker.setClassification(lClass);
-                            }
-                            else {   
-                                // assign a random classification
-                                Collections.shuffle(classificationList);
-                                myLinker.setClassification((LinkerClassification) classificationList.get(0));
-                            }
-                        }
-                        myFeature.setLinker(myLinker);
-                        if (linkerOnly) myFeature.setType(FeatureType.CONTROL);
+                    ResponseEntity<String> response2 = this.restTemplate.exchange(addUrl, HttpMethod.POST, requestEntity, String.class);
+                    String id = response2.getBody();
+                    layout.setId(id);
+                    result.getAddedLayouts().add(layout);
+                } catch (HttpServerErrorException e) {
+                    //TODO catch the ErrorMessage body and check for duplicate error
+                    String errorMessage = e.getResponseBodyAsString();
+                    if (errorMessage != null) {
+                        System.out.println("server error: " + errorMessage);
                     } 
+                    result.getErrors().add(layout);
+                } catch (HttpClientErrorException e) {
+                    String errorMessage = e.getResponseBodyAsString();
+                    if (errorMessage != null) {
+                        System.out.println("client error: " + errorMessage);
+                    }
+                    result.getErrors().add(layout);
                 }
-            }
-            try {
-                addFeature(myFeature);
-            } catch (HttpClientErrorException e) {
-                System.out.println("Feature " + f.getName() + " cannot be added. Reason: " + e.getMessage());
-            }
-        }
-        
-        // add Block Layouts
-        for (org.grits.toolbox.glycanarray.library.om.layout.BlockLayout blockLayout : blockLayouts) {
-            BlockLayout myLayout = new BlockLayout();
-            myLayout.setName(blockLayout.getName());
-            myLayout.setDescription(blockLayout.getComment());
-            myLayout.setWidth(blockLayout.getColumnNum());
-            myLayout.setHeight(blockLayout.getRowNum());
-            myLayout.setSpots(getSpotsFromBlockLayout(library, blockLayout));
-            
-            try {
-                addBlockLayout (myLayout);
-            } catch (HttpClientErrorException e) {
-                System.out.println("BlockLayout " + blockLayout.getId() + " cannot be added. Reason: " + e.getMessage());
-            }
-        }
-        
-        // add Slide Layouts
-        for (org.grits.toolbox.glycanarray.library.om.layout.SlideLayout slideLayout : layouts) {
-            SlideLayout mySlideLayout = new SlideLayout();
-            mySlideLayout.setName(slideLayout.getName());
-            mySlideLayout.setDescription(slideLayout.getDescription());
-            
-            List<org.glygen.array.client.model.Block> blocks = new ArrayList<org.glygen.array.client.model.Block>();
-            int width = 0;
-            int height = 0;
-            for (Block block: slideLayout.getBlock()) {
-                org.glygen.array.client.model.Block myBlock = new org.glygen.array.client.model.Block();
-                myBlock.setColumn(block.getColumn());
-                myBlock.setRow(block.getRow());
-                if (block.getColumn() > width)
-                    width = block.getColumn();
-                if (block.getRow() > height)
-                    height = block.getRow();
-                Integer blockLayoutId = block.getLayoutId();
-                org.grits.toolbox.glycanarray.library.om.layout.BlockLayout blockLayout = LibraryInterface.getBlockLayout(library, blockLayoutId);
-                BlockLayout myLayout = new BlockLayout();
-                myLayout.setName(blockLayout.getName());
-                myBlock.setBlockLayout(myLayout);
-                myLayout.setSpots(getSpotsFromBlockLayout(library, blockLayout));
-                blocks.add(myBlock);
-            }
-            
-            mySlideLayout.setHeight(slideLayout.getHeight() == null ? height: slideLayout.getHeight());
-            mySlideLayout.setWidth(slideLayout.getWidth() == null ? width: slideLayout.getWidth());
-            mySlideLayout.setBlocks(blocks);
-            
-            try {
-                addSlideLayout (mySlideLayout);
-                result.getAddedLayouts().add(mySlideLayout);
-            } catch (HttpClientErrorException e) {
-                String errorMessage = e.getResponseBodyAsString();
-                if (errorMessage.contains("Duplicate")) {
-                    result.getDuplicates().add(mySlideLayout);
-                } else {
-                    result.getErrors().add(mySlideLayout);
-                }
-            } catch (HttpServerErrorException e) {
-                String errorMessage = e.getResponseBodyAsString();
-                if (errorMessage.contains("Duplicate")) {
-                    result.getDuplicates().add(mySlideLayout);
-                } else {
-                    result.getErrors().add(mySlideLayout);
-                }
+            }            
+        } catch (HttpServerErrorException e) {
+            String errorMessage = e.getResponseBodyAsString();
+            if (errorMessage != null) {
+                System.out.println("server error: " + errorMessage);
+            } 
+        } catch (HttpClientErrorException e) {
+            String errorMessage = e.getResponseBodyAsString();
+            if (errorMessage != null) {
+                System.out.println("client error: " + errorMessage);
             }
         }
         
         return result;  
-    }
-    
-    public static List<org.glygen.array.client.model.Spot> getSpotsFromBlockLayout (ArrayDesignLibrary library, 
-            org.grits.toolbox.glycanarray.library.om.layout.BlockLayout blockLayout) {
-        List<org.glygen.array.client.model.Spot> spots = new ArrayList<>();
-        for (Spot spot: blockLayout.getSpot()) {
-            org.glygen.array.client.model.Spot s = new org.glygen.array.client.model.Spot();
-            s.setRow(spot.getY());
-            s.setColumn(spot.getX());
-            s.setGroup(spot.getGroup());
-            s.setConcentration(spot.getConcentration());
-            org.grits.toolbox.glycanarray.library.om.feature.Feature feature = LibraryInterface.getFeature(library, spot.getFeatureId());
-            List<org.glygen.array.client.model.Feature> features = new ArrayList<>();
-            if (feature != null) {
-                List<Ratio> ratios = feature.getRatio();
-                for (Ratio ratio : ratios) {
-                    org.glygen.array.client.model.Feature myFeature = new org.glygen.array.client.model.Feature();
-                    myFeature.setName(feature.getName());
-                    GlycanProbe probe = null;
-                    for (GlycanProbe p : library.getFeatureLibrary().getGlycanProbe()) {
-                        if (p.getId().equals(ratio.getItemId())) {
-                            probe = p;
-                            break;
-                        }
-                    }
-                    if (probe != null) {   
-                        org.grits.toolbox.glycanarray.library.om.feature.Linker linker = LibraryInterface.getLinker(library, probe.getLinker());
-                        if (linker != null) {
-                            myFeature.setType(FeatureType.NORMAL);
-                        } else {
-                            myFeature.setType(FeatureType.CONTROL);
-                        }
-                    }
-                    features.add(myFeature);
-                }
-            }
-            s.setFeatures(features);
-            if (!features.isEmpty())
-                spots.add(s);
-        }
-        
-        return spots;
     }
 }

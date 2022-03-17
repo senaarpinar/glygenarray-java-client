@@ -1,6 +1,5 @@
 package org.glygen.array.client.model.metadata;
 
-
 import org.glygen.array.client.model.template.DescriptionTemplate;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -16,6 +15,8 @@ public abstract class Description implements Comparable<Description>{
     String name;
     DescriptionTemplate key;
     Integer order = -1;
+    Boolean notRecorded = false;
+    Boolean notApplicable = false;
     
     public abstract boolean isGroup();
     
@@ -87,4 +88,30 @@ public abstract class Description implements Comparable<Description>{
         this.name = name;
     }
     
+    /**
+     * @return the notRecorded
+     */
+    public Boolean getNotRecorded() {
+        return notRecorded;
+    }
+    /**
+     * @param notRecorded the notRecorded to set
+     */
+    public void setNotRecorded(Boolean notRecorded) {
+        this.notRecorded = notRecorded;
+    }
+
+    /**
+     * @return the notApplicable
+     */
+    public Boolean getNotApplicable() {
+        return notApplicable;
+    }
+
+    /**
+     * @param notApplicable the notApplicable to set
+     */
+    public void setNotApplicable(Boolean notApplicable) {
+        this.notApplicable = notApplicable;
+    }    
 }

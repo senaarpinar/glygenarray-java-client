@@ -7,7 +7,11 @@ import org.glygen.array.client.model.ArrayDatasetListView;
 import org.glygen.array.client.model.LoginRequest;
 import org.glygen.array.client.model.MetadataListResultView;
 import org.glygen.array.client.model.data.ArrayDataset;
+import org.glygen.array.client.model.data.FileWrapper;
+import org.glygen.array.client.model.data.Image;
 import org.glygen.array.client.model.data.PrintedSlide;
+import org.glygen.array.client.model.data.ProcessedData;
+import org.glygen.array.client.model.data.RawData;
 import org.glygen.array.client.model.data.Slide;
 import org.glygen.array.client.model.metadata.AssayMetadata;
 import org.glygen.array.client.model.metadata.DataProcessingSoftware;
@@ -27,7 +31,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-
 
 public class DatasetRestClientImpl implements DatasetRestClient {
     
@@ -89,6 +92,30 @@ public class DatasetRestClientImpl implements DatasetRestClient {
         
         HttpEntity<Slide> requestEntity = new HttpEntity<Slide> (slide, headers);
         String url = this.url + "array/addSlide?arraydatasetId=" + datasetId;
+        try {
+            ResponseEntity<String> response = this.restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
+                return null;
+            }
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        } catch (HttpServerErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        }
+        
+    }
+    
+    @Override
+    public String addImageToSlide(Image image, String slideId, String datasetId) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        
+        HttpEntity<Image> requestEntity = new HttpEntity<Image> (image, headers);
+        String url = this.url + "array/addImage?arraydatasetId=" + datasetId + "&slideId=" + slideId;
         try {
             ResponseEntity<String> response = this.restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
             return response.getBody();
@@ -369,6 +396,53 @@ public class DatasetRestClientImpl implements DatasetRestClient {
             throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), "Error gettting array dataset list: " + e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public String addRawDataToImage(RawData rawData, String imageId, String datasetId) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        
+        HttpEntity<RawData> requestEntity = new HttpEntity<RawData> (rawData, headers);
+        String url = this.url + "array/addRawdata?arraydatasetId=" + datasetId + "&imageId=" + imageId;
+        try {
+            ResponseEntity<String> response = this.restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
+                return null;
+            }
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        } catch (HttpServerErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        }
+    }
+
+    @Override
+    public String addProcessedDataToRawData(ProcessedData processedData, String rawDataId, String datasetId) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        
+        HttpEntity<FileWrapper> requestEntity = new HttpEntity<FileWrapper> (processedData.getFile(), headers);
+        String url = this.url + "array/addProcessedDataFromExcel?arraydatasetId=" + datasetId + "&rawdataId=" + rawDataId +"&methodName=" + processedData.getMethod().getName()
+                + (processedData.getMetadata() == null ? "" : "&metadataId=" + processedData.getMetadata().getId()) ;
+        try {
+            ResponseEntity<String> response = this.restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
+                return null;
+            }
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        } catch (HttpServerErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        }
     }
 
 }
