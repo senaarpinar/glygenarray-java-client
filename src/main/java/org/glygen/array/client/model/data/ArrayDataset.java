@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.glygen.array.client.model.Creator;
 import org.glygen.array.client.model.Publication;
 import org.glygen.array.client.model.metadata.Sample;
 
+
+@XmlRootElement
 public class ArrayDataset extends FutureTask implements ChangeTrackable {
     String id;
     String uri;
@@ -15,11 +19,12 @@ public class ArrayDataset extends FutureTask implements ChangeTrackable {
     String description;
    
     Sample sample;
-    List<Slide> slides;
-    List<Publication> publications;
-    List<Creator> collaborators;
-    List<Grant> grants;
-    List<String> keywords;
+    List<Slide> slides = new ArrayList<Slide>();
+    List<Publication> publications = new ArrayList<Publication>();
+    List<Creator> collaborators = new ArrayList<Creator>();
+    List<Grant> grants = new ArrayList<Grant>();
+    List<String> keywords = new ArrayList<String>();
+    List<FileWrapper> files = new ArrayList<FileWrapper>();
     
     boolean isPublic = false;
     Creator user;
@@ -292,6 +297,20 @@ public class ArrayDataset extends FutureTask implements ChangeTrackable {
      */
     public void setPublicId(String publicId) {
         this.publicId = publicId;
+    }
+
+    /**
+     * @return the files
+     */
+    public List<FileWrapper> getFiles() {
+        return files;
+    }
+
+    /**
+     * @param files the files to set
+     */
+    public void setFiles(List<FileWrapper> files) {
+        this.files = files;
     }
 
 }

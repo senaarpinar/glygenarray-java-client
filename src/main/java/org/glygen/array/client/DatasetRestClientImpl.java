@@ -1,5 +1,6 @@
 package org.glygen.array.client;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.glygen.array.client.exception.CustomClientException;
@@ -31,6 +32,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DatasetRestClientImpl implements DatasetRestClient {
     
@@ -69,6 +73,20 @@ public class DatasetRestClientImpl implements DatasetRestClient {
         ArrayDataset dataset = new ArrayDataset();
         dataset.setName(experimentName);
         dataset.setSample(sample);
+        
+       /* try {
+            String result = new ObjectMapper()
+                    .writeValueAsString(dataset);
+            System.out.println(result);
+            ArrayDataset test = new ObjectMapper().readValue(result, ArrayDataset.class);
+            System.out.println ("converted back to object");
+        } catch (JsonProcessingException e1) {
+            e1.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }*/
+
         HttpEntity<ArrayDataset> requestEntity = new HttpEntity<ArrayDataset>(dataset, headers);
         String url = this.url + "array/addDataset";
         

@@ -3,8 +3,11 @@ package org.glygen.array.client.model.data;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.glygen.array.client.model.metadata.ScannerMetadata;
 
+@XmlRootElement
 public class Image {
     
     String id;

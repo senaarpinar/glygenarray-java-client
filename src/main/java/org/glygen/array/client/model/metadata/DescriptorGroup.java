@@ -1,6 +1,9 @@
 package org.glygen.array.client.model.metadata;
 
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 @JsonTypeName("descriptorgroup")
@@ -22,6 +25,7 @@ public class DescriptorGroup extends Description {
     }
     
     @Override
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public boolean isGroup() {
         return true;
     }

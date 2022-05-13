@@ -3,6 +3,8 @@ package org.glygen.array.client.model.data;
 import java.util.Date;
 import java.util.Map;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.glygen.array.client.model.Spot;
 import org.glygen.array.client.model.metadata.ImageAnalysisSoftware;
 
@@ -11,6 +13,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+@XmlRootElement
 public class RawData extends FutureTask {
     
     String id;

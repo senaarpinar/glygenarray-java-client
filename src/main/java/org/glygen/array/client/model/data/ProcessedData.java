@@ -2,8 +2,12 @@ package org.glygen.array.client.model.data;
 
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.glygen.array.client.model.metadata.DataProcessingSoftware;
 
+
+@XmlRootElement
 public class ProcessedData extends FutureTask {
     
     String id;

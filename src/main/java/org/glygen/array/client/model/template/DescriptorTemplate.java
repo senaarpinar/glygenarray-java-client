@@ -1,7 +1,10 @@
 package org.glygen.array.client.model.template;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 @JsonTypeName("descriptortemplate")
@@ -12,6 +15,8 @@ public class DescriptorTemplate extends DescriptionTemplate {
     List<String> units;
         
     @Override
+    //@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonIgnore
     public boolean isGroup() {
         return false;
     }
@@ -42,6 +47,13 @@ public class DescriptorTemplate extends DescriptionTemplate {
      */
     public void setSelectionList(List<String> selectionList) {
         this.selectionList = selectionList;
+    }
+    
+    public void addSelection (String selection) {
+        if (this.selectionList == null)
+            this.selectionList = new ArrayList<String>();
+        if (!this.selectionList.contains(selection))
+            this.selectionList.add(selection);
     }
 
     /**

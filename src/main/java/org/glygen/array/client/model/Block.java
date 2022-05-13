@@ -1,5 +1,6 @@
 package org.glygen.array.client.model;
 
+
 public class Block {
 	String uri;
 	String id;

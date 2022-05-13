@@ -1,5 +1,7 @@
 package org.glygen.array.client.model.template;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -13,15 +15,20 @@ public abstract class DescriptionTemplate implements Comparable<DescriptionTempl
     String id;
     String name;
     String description;
-    Boolean mandatory;
+    Boolean mandatory = false;
     Integer maxOccurrence;
     Integer order;
     String example;
     String wikiLink;
-    Integer mandateGroup = null;
-    Boolean xorMandate = true;
+    MandateGroup mandateGroup;
     Boolean mirage = false;
+    Boolean allowNotRecorded = false;
+    Boolean allowNotApplicable = false;
+    Boolean review = false;
+    String displayLabel;
     
+    //@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonIgnore
     public abstract boolean isGroup();
 
     /**
@@ -137,20 +144,6 @@ public abstract class DescriptionTemplate implements Comparable<DescriptionTempl
     }
 
     /**
-     * @return the mandateGroup
-     */
-    public Integer getMandateGroup() {
-        return mandateGroup;
-    }
-
-    /**
-     * @param mandateGroup the mandateGroup to set
-     */
-    public void setMandateGroup(Integer mandateGroup) {
-        this.mandateGroup = mandateGroup;
-    }
-
-    /**
      * @return the mirage
      */
     public Boolean isMirage() {
@@ -177,20 +170,6 @@ public abstract class DescriptionTemplate implements Comparable<DescriptionTempl
     }
 
     /**
-     * @return the xorMandate
-     */
-    public Boolean getXorMandate() {
-        return xorMandate;
-    }
-
-    /**
-     * @param xorMandate the xorMandate to set
-     */
-    public void setXorMandate(Boolean xorMandate) {
-        this.xorMandate = xorMandate;
-    }
-
-    /**
      * @return the order
      */
     public Integer getOrder() {
@@ -207,5 +186,75 @@ public abstract class DescriptionTemplate implements Comparable<DescriptionTempl
     @Override
     public int compareTo(DescriptionTemplate o) {
         return this.order.compareTo(o.order);
+    }
+
+    /**
+     * @param mandateGroup the mandateGroup to set
+     */
+    public void setMandateGroup(MandateGroup mandateGroup) {
+        this.mandateGroup = mandateGroup;
+    }
+
+    /**
+     * @return the mandateGroup
+     */
+    public MandateGroup getMandateGroup() {
+        return mandateGroup;
+    }
+
+    /**
+     * @return the allowNotRecorded
+     */
+    public Boolean getAllowNotRecorded() {
+        return allowNotRecorded;
+    }
+
+    /**
+     * @param allowNotRecorded the allowNotRecorded to set
+     */
+    public void setAllowNotRecorded(Boolean allowNotRecorded) {
+        this.allowNotRecorded = allowNotRecorded;
+    }
+
+    /**
+     * @return the allowNotApplicable
+     */
+    public Boolean getAllowNotApplicable() {
+        return allowNotApplicable;
+    }
+
+    /**
+     * @param allowNotApplicable the allowNotApplicable to set
+     */
+    public void setAllowNotApplicable(Boolean allowNotApplicable) {
+        this.allowNotApplicable = allowNotApplicable;
+    }
+
+    /**
+     * @return the review
+     */
+    public Boolean getReview() {
+        return review;
+    }
+
+    /**
+     * @param review the review to set
+     */
+    public void setReview(Boolean review) {
+        this.review = review;
+    }
+
+    /**
+     * @return the displayLabel
+     */
+    public String getDisplayLabel() {
+        return displayLabel;
+    }
+
+    /**
+     * @param displayLabel the displayLabel to set
+     */
+    public void setDisplayLabel(String displayLabel) {
+        this.displayLabel = displayLabel;
     }
 }

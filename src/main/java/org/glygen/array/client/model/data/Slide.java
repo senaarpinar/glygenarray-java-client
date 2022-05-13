@@ -2,8 +2,11 @@ package org.glygen.array.client.model.data;
 
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.glygen.array.client.model.metadata.AssayMetadata;
 
+@XmlRootElement
 public class Slide {
     
     String id;

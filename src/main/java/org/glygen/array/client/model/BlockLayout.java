@@ -3,6 +3,9 @@ package org.glygen.array.client.model;
 import java.util.Date;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
 public class BlockLayout {
 	String id;
 	String uri;
@@ -18,7 +21,6 @@ public class BlockLayout {
 	/**
 	 * @return the name
 	 */
-	
 	public String getName() {
 		return name;
 	}

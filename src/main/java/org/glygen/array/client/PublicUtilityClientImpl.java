@@ -3,6 +3,7 @@ package org.glygen.array.client;
 import java.util.List;
 
 import org.glygen.array.client.model.data.StatisticalMethod;
+import org.glygen.array.client.model.template.MetadataTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
@@ -35,6 +36,20 @@ public class PublicUtilityClientImpl implements PublicUtilitiyClient {
     
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    @Override
+    public MetadataTemplate getTemplate(String id) {
+        //http://localhost:8080/util/getTemplate/Metadata6
+        String url = this.url + "util/getTemplate/" + id;
+        try {
+            ResponseEntity<MetadataTemplate> response = this.restTemplate.exchange(url, HttpMethod.GET, null, MetadataTemplate.class);
+            MetadataTemplate template = response.getBody();
+            return template;
+        } catch (HttpClientErrorException e) {
+            System.out.println ("Error gettting metadata template: " + e.getMessage());
+        }
+        return null;
     }
 
 }
