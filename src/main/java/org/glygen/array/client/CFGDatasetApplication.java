@@ -1,11 +1,15 @@
 package org.glygen.array.client;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.glygen.array.client.exception.CustomClientException;
+import org.glygen.array.client.model.ErrorCodes;
+import org.glygen.array.client.model.ErrorMessage;
 import org.glygen.array.client.model.User;
 import org.glygen.array.client.model.cfg.Experiment;
 import org.glygen.array.client.model.cfg.SampleData;
@@ -47,6 +51,8 @@ import ch.qos.logback.classic.Logger;
 public class CFGDatasetApplication implements CommandLineRunner {
 
     private static final Logger log = (Logger) LoggerFactory.getLogger(Application.class);
+    
+    SimpleDateFormat dt1 = new SimpleDateFormat("yyyy-MM-dd");
     
     @Bean
     @ConfigurationProperties("glygen")
@@ -105,11 +111,11 @@ public class CFGDatasetApplication implements CommandLineRunner {
         
         String[] datasetFolders = dataFolder.list();
         for (String experimentName: datasetFolders) {
-            System.out.println("Procesing " + experimentName);
             try {
-                Experiment experiment = getExperimentDetails(experimentName, url, token);
                 File experimentFolder = new File (dataFolder + File.separator + experimentName);
                 if (experimentFolder.isDirectory()) {
+                    System.out.println("Procesing " + experimentName);
+                    Experiment experiment = getExperimentDetails(experimentName, url, token);
                     String processedDataFile = null;
                     String rawDataFile = null;
                     for (String filename: experimentFolder.list()) {
@@ -141,14 +147,20 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     sample.setDescriptorGroups(null);
                     sample.setDescriptors(null);
                     
+                    String datasetName = sample.getName();
+                    
+                    if (datasetName == null || datasetName.trim().isEmpty()) {
+                        datasetName = experiment.getSampleName().substring(experiment.getSampleName().lastIndexOf(":"), experiment.getSampleName().length()-1);
+                    }
+                    datasetName += ":" + dt1.format(experiment.getDate()) + ":" + experiment.getPrimScreen();
                     String datasetID = null;
-                    ArrayDataset existing = datasetClient.getDatasetByLabel (sample.getName());
+                    ArrayDataset existing = datasetClient.getDatasetByLabel (datasetName);
                     if (existing == null) {
                         try { 
                             // create the array dataset
-                            datasetID = datasetClient.addDataset(sample.getName(), sample);
+                            datasetID = datasetClient.addDataset(datasetName, sample);
                         } catch (CustomClientException e1) {
-                            System.out.println ("Error adding the dataset: " + sample.getName() + "Reason: " + e1.getBody());
+                            System.out.println ("Error adding the dataset: " + datasetName + "Reason: " + e1.getBody());
                             continue;
                         }
                     } else {
@@ -173,7 +185,8 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                         if (data.getProcessedDataList() == null) continue;
                                         for (ProcessedData processedData: data.getProcessedDataList()) {
                                             if (processedData.getFile() != null) {
-                                                if (processedData.getFile().getOriginalName().equals(processedDataFile)) {
+                                                if (processedData.getFile().getOriginalName() != null &&
+                                                        processedData.getFile().getOriginalName().equals(processedDataFile)) {
                                                     if (processedData.getStatus() == FutureTaskStatus.DONE) {
                                                         // skip uploading
                                                         file = processedData.getFile();
@@ -230,26 +243,101 @@ public class CFGDatasetApplication implements CommandLineRunner {
                             if (imageId != null) {
                                 String rawDataId = datasetClient.addRawDataToImage(rawData, imageId, datasetID);
                                 rawData.setId(rawDataId);
+                                boolean done = false;
+                                long timePassed = 0;
+                                while (!done) {
+                                    if (rawData.getFile() == null) {
+                                        TimeUnit.SECONDS.sleep(1);
+                                    } else {
+                                        TimeUnit.MINUTES.sleep(5);
+                                        timePassed += 5;
+                                    }
+                                    try {
+                                        ArrayDataset dataset = datasetClient.getDatasetByLabel(datasetName);
+                                        if (dataset.getSlides().get(0).getImages().get(0).getRawDataList().get(0).getStatus() == FutureTaskStatus.DONE ||
+                                                dataset.getSlides().get(0).getImages().get(0).getRawDataList().get(0).getStatus() == FutureTaskStatus.ERROR)
+                                            done = true;
+                                        else 
+                                            System.out.println("Raw data is not done yet! Checking in 5 minutes!");
+                                        if (timePassed > 30) {
+                                            //login again
+                                            datasetClient.clearToken();
+                                            fileClient.clearToken();
+                                            userClient.login(args[0], args[1]);
+                                            token = userClient.getToken();
+                                            timePassed = 0;
+                                        }
+                                    } catch (Exception e) {
+                                        System.out.println("Failed checking if rawdata is finished: " + dataFolder.getName() + File.separator + experimentName);
+                                        System.out.println("Reason" + e.getMessage());
+                                        if (e instanceof CustomClientException && ((CustomClientException) e).getBody() != null && ((CustomClientException) e).getBody().contains("EXPIRED")) {
+                                            // force login
+                                            System.out.println ("rawdata check: token expired, login again!");
+                                            datasetClient.clearToken();
+                                            fileClient.clearToken();
+                                            userClient.login(args[0], args[1]);
+                                            token = userClient.getToken();
+                                            timePassed = 0;
+                                        }
+                                    }
+                                    
+                                }
                                 if (rawDataId != null) {
                                     String processedDataId = datasetClient.addProcessedDataToRawData(processedData, rawDataId, datasetID);
                                     processedData.setId(processedDataId);
+                                    done = false;
+                                    timePassed = 0;
+                                    while (!done) {
+                                        TimeUnit.MINUTES.sleep(5);
+                                        try {
+                                            ArrayDataset dataset = datasetClient.getDatasetByLabel(datasetName);
+                                            if (dataset.getSlides().get(0).
+                                                    getImages().get(0).getRawDataList().get(0).getProcessedDataList().get(0).getStatus() == FutureTaskStatus.DONE ||
+                                                    dataset.getSlides().get(0).
+                                                    getImages().get(0).getRawDataList().get(0).getProcessedDataList().get(0).getStatus() == FutureTaskStatus.ERROR)
+                                                done = true;
+                                            else
+                                                System.out.println("Processed data is not done yet! Checking in 5 minutes!");
+                                            timePassed += 5;
+                                            if (timePassed > 30) {
+                                                //login again
+                                                datasetClient.clearToken();
+                                                fileClient.clearToken();
+                                                userClient.login(args[0], args[1]);
+                                                token = userClient.getToken();
+                                                timePassed = 0;
+                                            }
+                                        } catch (Exception e) {
+                                            System.out.println("Failed checking if processeddata is finished: " + dataFolder.getName() + File.separator + experimentName);
+                                            System.out.println("Reason" + e.getMessage());
+                                            if (e instanceof CustomClientException && ((CustomClientException) e).getBody() != null && ((CustomClientException) e).getBody().contains("EXPIRED")) {
+                                                // force login
+                                                System.out.println ("processed data check: token expired, login again!");
+                                                datasetClient.clearToken();
+                                                fileClient.clearToken();
+                                                userClient.login(args[0], args[1]);
+                                                token = userClient.getToken();
+                                                timePassed = 0;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                         log.info("Added slide " + slideId + " for " + datasetID + " folder: " + experimentFolder);
-                      /*  List<Slide> slides = new ArrayList<Slide>();
-                        slides.add(slide);
-                        ArrayDataset datasetSample = new ArrayDataset();
-                        datasetSample.setName("testDataset");
-                        datasetSample.setDescription("descripton1");
-                        datasetSample.setSlides(slides);
-                        String jsonValue = new ObjectMapper().writeValueAsString(datasetSample);
-                        System.out.println(jsonValue);*/
                     }
                 }
             } catch (CustomClientException e) { 
-                System.out.println (e.getBody());
-                System.out.println("Failed: " + dataFolder.getName() + File.separator + experimentName);
+                if (e.getBody() != null && e.getBody().contains("EXPIRED")) {
+                    System.out.println ("token expired, login again!");
+                    datasetClient.clearToken();
+                    fileClient.clearToken();
+                    userClient.login(args[0], args[1]);
+                    token = userClient.getToken();
+                } else {
+                    System.out.println (e.getBody());
+                    System.out.println("Failed: " + dataFolder.getName() + File.separator + experimentName);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("Failed: " + dataFolder.getName() + File.separator + experimentName);
@@ -276,7 +364,11 @@ public class CFGDatasetApplication implements CommandLineRunner {
     private Sample createSample(Experiment experiment, PublicUtilitiyClient utilClient) {   
         SampleData result = experiment.getSampleData();
         Sample sample = new Sample();
-        sample.setName(result.getName());
+        String name = result.getName();
+        if (name == null || name.trim().isEmpty()) {
+            name = experiment.getSampleName().substring(experiment.getSampleName().lastIndexOf(":")+1, experiment.getSampleName().length());
+        }
+        sample.setName(name);
         sample.setDescriptors(new ArrayList<Descriptor>());
         sample.setDescriptorGroups(new ArrayList<DescriptorGroup>());
         String template = determineSampleTemplate (result);
@@ -355,6 +447,29 @@ public class CFGDatasetApplication implements CommandLineRunner {
                 addDescriptor("Immunization schedule", result.getImmunizationSchedule(), immunization.getDescriptors(), template);
             }
             sample.getDescriptorGroups().add(immunization);
+        } else {
+            // not recorded
+            DescriptorGroup immunization = new DescriptorGroup();
+            immunization.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Immunization", template);
+            immunization.setKey(key2);
+            immunization.setName(key2.getName());
+            immunization.setNotRecorded(true);
+            DescriptorGroup natural = new DescriptorGroup();
+            natural.setDescriptors(new ArrayList<Description>());
+            key2 = getKeyFromTemplate("Natural immunity", template);
+            natural.setKey(key2);
+            natural.setName(key2.getName());
+            natural.setNotRecorded(true);
+            DescriptorGroup expression = new DescriptorGroup();
+            expression.setDescriptors(new ArrayList<Description>());
+            key2 = getKeyFromTemplate("Expression", template);
+            expression.setKey(key2);
+            expression.setName(key2.getName());
+            expression.setNotRecorded(true);
+            sample.getDescriptorGroups().add(immunization);
+            sample.getDescriptorGroups().add(natural);
+            sample.getDescriptorGroups().add(expression);
         }
     }
 
@@ -367,21 +482,28 @@ public class CFGDatasetApplication implements CommandLineRunner {
             species.setName(key2.getName());
             addDescriptor ("Species name", result.getOrganismCells(), species.getDescriptors(), template);
             sample.getDescriptorGroups().add(species);
-        }   
+        } else {
+            System.out.println("No species information is found for " + sample.getName());
+        }
+    }
+    
+    private void addDescriptor (String name, String value, List descriptors, MetadataTemplate template) {
+        addDescriptor(name, value, false, descriptors, template);
     }
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void addDescriptor (String name, String value, List descriptors, MetadataTemplate template) {
+    private void addDescriptor (String name, String value, Boolean notRecorded, List descriptors, MetadataTemplate template) {
         Descriptor desc = new Descriptor();
         desc.setName(name);
         DescriptionTemplate key = getKeyFromTemplate (desc.getName(), template);
         desc.setKey(key);
         desc.setValue(value);
+        desc.setNotRecorded(notRecorded);
         descriptors.add(desc);
     }
 
     private void fillInProteinInfo(Sample sample, SampleData result, String species, MetadataTemplate template) {
-        if (result.getSpecSciName() != null && !result.getSpecSciName().isEmpty()) {
+        if (result.getSpecSciName() != null && !result.getSpecSciName().trim().isEmpty()) {
             DescriptorGroup spec = new DescriptorGroup();
             spec.setDescriptors(new ArrayList<Description>());
             DescriptionTemplate key2 = getKeyFromTemplate("Species", template);
@@ -389,7 +511,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
             spec.setName(key2.getName());
             addDescriptor ("Species name", result.getSpecSciName(), spec.getDescriptors(), template);
             sample.getDescriptorGroups().add(spec);
-        } else if (species != null && !species.isEmpty()) {
+        } else if (species != null && !species.trim().isEmpty()) {
             DescriptorGroup spec = new DescriptorGroup();
             spec.setDescriptors(new ArrayList<Description>());
             DescriptionTemplate key2 = getKeyFromTemplate("Species", template);
@@ -397,35 +519,55 @@ public class CFGDatasetApplication implements CommandLineRunner {
             spec.setName(key2.getName());
             addDescriptor ("Species name", species, spec.getDescriptors(), template);
             sample.getDescriptorGroups().add(spec);
-        }  
-        if (result.getPrimarySequence() != null && !result.getPrimarySequence().isEmpty()) {
+        } else {
+            System.out.println("No species information is found for " + sample.getName());
+        }
+        if (result.getPrimarySequence() != null && !result.getPrimarySequence().trim().isEmpty()) {
             DescriptorGroup natural = new DescriptorGroup();
             natural.setDescriptors(new ArrayList<Description>());
-            DescriptionTemplate key2 = getKeyFromTemplate("Natural souce", template);
+            DescriptionTemplate key2 = getKeyFromTemplate("Natural source", template);
             natural.setKey(key2);
             natural.setName(key2.getName());
             addDescriptor ("AA sequence", result.getPrimarySequence(), natural.getDescriptors(), template);
             sample.getDescriptorGroups().add(natural);
+        } else {
+            DescriptorGroup natural = new DescriptorGroup();
+            natural.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Natural source", template);
+            natural.setKey(key2);
+            natural.setName(key2.getName());
+            natural.setNotRecorded(true);
+            DescriptorGroup expression = new DescriptorGroup();
+            expression.setDescriptors(new ArrayList<Description>());
+            key2 = getKeyFromTemplate("Expression  system", template);
+            expression.setKey(key2);
+            expression.setName(key2.getName());
+            expression.setNotRecorded(true);
+            sample.getDescriptorGroups().add(natural);
+            sample.getDescriptorGroups().add(expression);
         }
         
-        if (result.getCompleteName() != null && !result.getCompleteName().isEmpty()) {
+        if (result.getCompleteName() != null && !result.getCompleteName().trim().isEmpty()) {
             addDescriptor ("Protein name", result.getCompleteName(), sample.getDescriptors(), template);
+        } else {
+            // not recorded
+            addDescriptor ("Protein name", null, true, sample.getDescriptors(), template);
         }
     }
 
     private void fillInCommonInfo(Sample sample, SampleData result, MetadataTemplate template) {
         // comment
         StringBuffer commentBuffer = new StringBuffer("");
-        if (result.getStorageCondition() != null && !result.getStorageCondition().isEmpty()) {
+        if (result.getStorageCondition() != null && !result.getStorageCondition().trim().isEmpty()) {
             commentBuffer.append("Condition of storage:" + result.getStorageCondition() + "\n");
         } 
-        if (result.getDateStored() != null && !result.getDateStored().isEmpty()) {
+        if (result.getDateStored() != null && !result.getDateStored().trim().isEmpty()) {
             commentBuffer.append("When was sample placed in storage:" + result.getDateStored() + "\n");
         }
-        if (result.getDiluent() != null && !result.getDiluent().isEmpty()) {
+        if (result.getDiluent() != null && !result.getDiluent().trim().isEmpty()) {
             commentBuffer.append("Dilution in what diluent:" + result.getDiluent() + "\n");
         }
-        if (result.getOrganismDescription() != null && !result.getOrganismDescription().isEmpty()) {
+        if (result.getOrganismDescription() != null && !result.getOrganismDescription().trim().isEmpty()) {
             commentBuffer.append("Describe the organism by entering information that a person skilled "
                     + "in this field would expect to see to accurately identify the organism:" + result.getOrganismDescription() + "\n");
         }
@@ -499,7 +641,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
         }*/
         
         // database entry - Genbank
-        if (result.getGenBank() != null && !result.getGenBank().isEmpty()) {
+        if (result.getGenBank() != null && !result.getGenBank().trim().isEmpty()) {
             DescriptorGroup genbankEntry = new DescriptorGroup();
             genbankEntry.setDescriptors(new ArrayList<Description>());
             DescriptionTemplate key2 = getKeyFromTemplate("Database entry", template);
@@ -512,7 +654,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
         }
         
         // database entry - Swis_prot
-        if (result.getSwissProt() != null && !result.getSwissProt().isEmpty()) {
+        if (result.getSwissProt() != null && !result.getSwissProt().trim().isEmpty()) {
             DescriptorGroup genbankEntry = new DescriptorGroup();
             genbankEntry.setDescriptors(new ArrayList<Description>());
             DescriptionTemplate key2 = getKeyFromTemplate("Database entry", template);
@@ -528,6 +670,16 @@ public class CFGDatasetApplication implements CommandLineRunner {
             sample.getDescriptorGroups().add(genbankEntry);
         }
         
+        DescriptionTemplate descT = getKeyFromTemplate("Commercial source", template);
+        DescriptorGroup group = new DescriptorGroup();
+        group.setKey(descT);
+        group.setNotRecorded(true);
+        DescriptionTemplate descT2 = getKeyFromTemplate("Non-commercial", template);
+        DescriptorGroup group2 = new DescriptorGroup();
+        group2.setKey(descT2);
+        group2.setNotRecorded(true);
+        sample.getDescriptorGroups().add(group);
+        sample.getDescriptorGroups().add(group2);
     }
     
     public static DescriptionTemplate getKeyFromTemplate(String descriptorName, MetadataTemplate metadataTemplate) {

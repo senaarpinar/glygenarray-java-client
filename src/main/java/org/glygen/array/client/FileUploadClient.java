@@ -38,4 +38,6 @@ public interface FileUploadClient {
      * @param url url to be used to access the web services (with the trailing /)
      */
     void setURL (String url);
+    
+    void clearToken();
 }

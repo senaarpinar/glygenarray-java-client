@@ -79,4 +79,6 @@ public interface GlycanRestClient {
 	 * @return a result object with the added slide layouts, errors and duplicates
 	 */
     ImportGRITSLibraryResult addFromLibrary(FileWrapper file);
+    
+    void clearToken();
 }

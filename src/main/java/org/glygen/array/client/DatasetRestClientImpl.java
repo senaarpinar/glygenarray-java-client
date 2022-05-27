@@ -60,6 +60,11 @@ public class DatasetRestClientImpl implements DatasetRestClient {
     public void setURL(String url) {
        this.url = url;
     }
+    
+    @Override
+    public void clearToken () {
+        this.token = null;
+    }
 
     @Override
     public String addDataset(String experimentName, Sample sample) {

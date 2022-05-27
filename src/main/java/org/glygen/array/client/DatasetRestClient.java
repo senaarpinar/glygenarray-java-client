@@ -127,6 +127,8 @@ public interface DatasetRestClient {
     String addImageToSlide(Image image, String slideId, String datasetId);
     String addRawDataToImage(RawData rawData, String imageId, String datasetId);
     String addProcessedDataToRawData(ProcessedData processedData, String rawDataId, String datasetId);
+
+    void clearToken();
     
     /**
      * return slide given its id

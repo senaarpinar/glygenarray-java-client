@@ -60,6 +60,11 @@ public class GlycanRestClientImpl implements GlycanRestClient {
 	
 	Map <String, Feature> featureCache = new HashMap<String, Feature>();
 	
+	@Override
+    public void clearToken () {
+        this.token = null;
+    }
+	
 	/**
      * {@inheritDoc}
      */
@@ -296,7 +301,7 @@ public class GlycanRestClientImpl implements GlycanRestClient {
     @Override
     public ImportGRITSLibraryResult addFromLibrary(FileWrapper file) {
         ImportGRITSLibraryResult result = new ImportGRITSLibraryResult();
-        
+        if (token == null) login(this.username, this.password);
         //set the header with token
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
@@ -305,10 +310,12 @@ public class GlycanRestClientImpl implements GlycanRestClient {
         String addUrl = this.url + "array/addSlideLayoutFromLibrary";
         try {
             // get the list of slide layouts in the file
-            ResponseEntity<List> response = this.restTemplate.exchange(url, HttpMethod.GET, null, List.class);
-            List layoutList = response.getBody();
-            for (Object item: layoutList) {
-                SlideLayout layout = (SlideLayout)item;
+            HttpEntity<Map<String, String>> requestEntity1 = new HttpEntity<>(headers);
+            ResponseEntity<SlideLayout[]> response = this.restTemplate.exchange(url, HttpMethod.GET, requestEntity1, SlideLayout[].class);
+            //List layoutList = response.getBody();
+            List<SlideLayout> returnedLayouts = Arrays.asList(response.getBody());
+            for (SlideLayout layout: returnedLayouts) {
+               // SlideLayout layout = (SlideLayout)item;
                 // add the slide layout
                 LibraryImportInput input = new LibraryImportInput();
                 input.setFile(file);

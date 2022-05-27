@@ -46,7 +46,7 @@ public class Application implements CommandLineRunner {
 	
 	@Bean
 	@ConfigurationProperties("glygen")
-	public GlygenSettings glygen() {
+	public GlygenSettings glygen1() {
 		return new GlygenSettings();
 	}
 
@@ -56,7 +56,7 @@ public class Application implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-	    GlygenSettings settings = glygen();
+	    GlygenSettings settings = glygen1();
 		UserRestClient userClient = new UserRestClientImpl();
 		userClient.setURL(settings.scheme + settings.host + settings.basePath);
 		if (args == null || args.length < 3) {

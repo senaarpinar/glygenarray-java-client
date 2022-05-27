@@ -192,5 +192,10 @@ public class FileUploadClientImpl implements FileUploadClient {
             throw new CustomClientException (e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
         }
     }
+    
+    @Override
+    public void clearToken () {
+        this.token = null;
+    }
 
 }
