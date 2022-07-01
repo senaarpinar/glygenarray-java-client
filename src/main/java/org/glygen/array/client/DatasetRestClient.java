@@ -1,5 +1,7 @@
 package org.glygen.array.client;
 
+import java.util.Date;
+
 import org.glygen.array.client.model.data.ArrayDataset;
 import org.glygen.array.client.model.data.Image;
 import org.glygen.array.client.model.data.PrintedSlide;
@@ -38,11 +40,13 @@ public interface DatasetRestClient {
      * adds the given array dataset to the repository
      * 
      * @param datasetName name of the experiment/dataset
+     * @param description description of the experiment/dataset
      * @param sample Sample used in the experiment, Sample should already be in the repository
+     * @param date date when experiment is created
      * Either id or name should be specified for the sample, the other fields might be left empty/null
      * @return the id of the newly added array dataset
      */
-    String addDataset(String datasetName, Sample sample);
+    String addDataset(String experimentName, String description, Sample sample, Date date);
     
     /**
      * add the given slide to the dataset

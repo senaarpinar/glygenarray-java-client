@@ -12,6 +12,7 @@ import org.glygen.array.client.model.ErrorCodes;
 import org.glygen.array.client.model.ErrorMessage;
 import org.glygen.array.client.model.User;
 import org.glygen.array.client.model.cfg.Experiment;
+import org.glygen.array.client.model.cfg.Link;
 import org.glygen.array.client.model.cfg.SampleData;
 import org.glygen.array.client.model.data.ArrayDataset;
 import org.glygen.array.client.model.data.FileWrapper;
@@ -158,7 +159,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     if (existing == null) {
                         try { 
                             // create the array dataset
-                            datasetID = datasetClient.addDataset(datasetName, sample);
+                            datasetID = datasetClient.addDataset(datasetName, experiment.getSampleData().getExperimentDescription(), sample, experiment.getDate());
                         } catch (CustomClientException e1) {
                             System.out.println ("Error adding the dataset: " + datasetName + "Reason: " + e1.getBody());
                             continue;
@@ -391,7 +392,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
             mt = utilClient.getTemplate ("Metadata2");
             fillInBiospecimenInfo (sample, result, mt);
         } 
-        fillInCommonInfo (sample, result, mt);
+        fillInCommonInfo (sample, experiment, mt);
         return sample;
     }
 
@@ -496,6 +497,10 @@ public class CFGDatasetApplication implements CommandLineRunner {
         Descriptor desc = new Descriptor();
         desc.setName(name);
         DescriptionTemplate key = getKeyFromTemplate (desc.getName(), template);
+        if (key == null) {
+            System.err.println ("key for " + desc.getName() + " cannot be obtained from " + template.getName());
+            throw new RuntimeException ("key for " + desc.getName() + " cannot be obtained from " + template.getName());
+        }
         desc.setKey(key);
         desc.setValue(value);
         desc.setNotRecorded(notRecorded);
@@ -555,7 +560,8 @@ public class CFGDatasetApplication implements CommandLineRunner {
         }
     }
 
-    private void fillInCommonInfo(Sample sample, SampleData result, MetadataTemplate template) {
+    private void fillInCommonInfo(Sample sample, Experiment experiment, MetadataTemplate template) {
+        SampleData result = experiment.getSampleData();
         // comment
         StringBuffer commentBuffer = new StringBuffer("");
         if (result.getStorageCondition() != null && !result.getStorageCondition().trim().isEmpty()) {
@@ -623,22 +629,33 @@ public class CFGDatasetApplication implements CommandLineRunner {
             DescriptionTemplate key2 = getKeyFromTemplate("Sample reference", template);
             reference.setKey(key2);
             reference.setName(key2.getName());
-            Descriptor value = new Descriptor();
-            value.setName("Value");
-            DescriptionTemplate key6 = getKeyFromTemplate ("Value", template);
-            value.setKey(key6);
-            String referenceValue = result.getReference();
-            //TODO how to parse
-            value.setValue(referenceValue);
-            if (value.getValue() != null) {
-                Descriptor sub1Desc4 = new Descriptor();
-                sub1Desc4.setName("Type");
-                sub1Desc4.setValue("PMID");   // TODO what should be the type??? 
-                reference.getDescriptors().add(value);
-                reference.getDescriptors().add(sub1Desc4);
+            String referenceValue = link.getHref();
+            if (referenceValue != null) {
+                addDescriptor ("Value", referenceValue, reference.getDescriptors(), template);
+                addDescriptor ("Type", "URL", reference.getDescriptors(), template);
                 sample.getDescriptorGroups().add(reference);
             }
         }*/
+        
+        //TODO extract further_info as well
+        
+        if (experiment.getLinks() != null && !experiment.getLinks().isEmpty()) {
+            for (Link link: experiment.getLinks()) {
+                if (link.getLinkText() != null && link.getLinkText().toLowerCase().contains("sample view")) {
+                    DescriptorGroup reference = new DescriptorGroup();
+                    reference.setDescriptors(new ArrayList<Description>());
+                    DescriptionTemplate key2 = getKeyFromTemplate("Sample reference", template);
+                    reference.setKey(key2);
+                    reference.setName(key2.getName());
+                    String referenceValue = link.getHref();
+                    if (referenceValue != null) {
+                        addDescriptor ("Value", referenceValue, reference.getDescriptors(), template);
+                        addDescriptor ("Type", "URL", reference.getDescriptors(), template);
+                        sample.getDescriptorGroups().add(reference);
+                    }
+                }
+            }
+        }
         
         // database entry - Genbank
         if (result.getGenBank() != null && !result.getGenBank().trim().isEmpty()) {
@@ -670,7 +687,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
             sample.getDescriptorGroups().add(genbankEntry);
         }
         
-        DescriptionTemplate descT = getKeyFromTemplate("Commercial source", template);
+        DescriptionTemplate descT = getKeyFromTemplate("Commercial", template);
         DescriptorGroup group = new DescriptorGroup();
         group.setKey(descT);
         group.setNotRecorded(true);

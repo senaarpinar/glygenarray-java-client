@@ -2,6 +2,7 @@ package org.glygen.array.client;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 
 import org.glygen.array.client.exception.CustomClientException;
 import org.glygen.array.client.model.ArrayDatasetListView;
@@ -67,7 +68,7 @@ public class DatasetRestClientImpl implements DatasetRestClient {
     }
 
     @Override
-    public String addDataset(String experimentName, Sample sample) {
+    public String addDataset(String experimentName, String description, Sample sample, Date date) {
         if (token == null) login (this.username, this.password);
         
         HttpHeaders headers = new HttpHeaders();
@@ -78,6 +79,8 @@ public class DatasetRestClientImpl implements DatasetRestClient {
         ArrayDataset dataset = new ArrayDataset();
         dataset.setName(experimentName);
         dataset.setSample(sample);
+        dataset.setDescription(description);
+        dataset.setDateCreated(date);
         
        /* try {
             String result = new ObjectMapper()
