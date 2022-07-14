@@ -400,21 +400,20 @@ public class CFGDatasetApplication implements CommandLineRunner {
         if (result.getSerumSpeciesInfo() != null && !result.getSerumSpeciesInfo().isEmpty()) {
             addDescriptor("Species", result.getSerumCollectionInfo(), sample.getDescriptors(), template);
             addDescriptor("Biospecimen type", "serum", sample.getDescriptors(), template);
+        } else {
+            addDescriptor("Species", "", sample.getDescriptors(), template);
+            addDescriptor("Biospecimen type", "", sample.getDescriptors(), template);
         }
     }
 
     private void fillInAntibodyInfo(Sample sample, SampleData result, MetadataTemplate template) {
-        if (result.getSpecies() != null && !result.getSpecies().isEmpty()) {
-            addDescriptor ("Host species", result.getSpecies(), sample.getDescriptors(), template);
-        }
         if (result.getImmunogen() != null && !result.getImmunogen().isEmpty()) {
             addDescriptor ("Immunogen", result.getImmunogen(), sample.getDescriptors(), template);
+        } else {
+            addDescriptor ("Immunogen", null, true, sample.getDescriptors(), template);
         }
         if (result.getEpitopeInfo() != null && !result.getEpitopeInfo().isEmpty()) {
             addDescriptor ("Epitope", result.getEpitopeInfo(), sample.getDescriptors(), template);
-        }
-        if (result.getAntibodyType() != null && !result.getAntibodyType().isEmpty()) {
-            addDescriptor ("Clonality", result.getAntibodyType(), sample.getDescriptors(), template);
         }
         if (result.getAntibodyIsotope() != null && !result.getAntibodyIsotope().isEmpty()) {
             addDescriptor ("Isotype", result.getAntibodyIsotope(), sample.getDescriptors(), template);
@@ -422,9 +421,10 @@ public class CFGDatasetApplication implements CommandLineRunner {
         if (result.getSubtype() != null && !result.getSubtype().isEmpty()) {
             addDescriptor ("Subtype", result.getSubtype(), sample.getDescriptors(), template);
         }
-        if (result.getAntibodyName() != null && !result.getAntibodyName().isEmpty()) {
-            addDescriptor ("Antibody name", result.getAntibodyName(), sample.getDescriptors(), template);
-        }
+        addDescriptor ("Host species", result.getSpecies(), sample.getDescriptors(), template);
+        addDescriptor ("Clonality", result.getAntibodyType(), sample.getDescriptors(), template);
+        addDescriptor ("Antibody name", result.getAntibodyName(), sample.getDescriptors(), template);
+        addDescriptor ("Type", "", sample.getDescriptors(), template);
         if (result.getImmunizationSex() != null || result.getImmunizationDoseAndRoute() != null || result.getAdjuvant() != null ||
                 result.getAgeOfSubject() != null || result.getImmunizationSchedule() != null) {
             DescriptorGroup immunization = new DescriptorGroup();
@@ -484,7 +484,14 @@ public class CFGDatasetApplication implements CommandLineRunner {
             addDescriptor ("Species name", result.getOrganismCells(), species.getDescriptors(), template);
             sample.getDescriptorGroups().add(species);
         } else {
-            System.out.println("No species information is found for " + sample.getName());
+            // put missing info for species
+            DescriptorGroup spec = new DescriptorGroup();
+            spec.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Species", template);
+            spec.setKey(key2);
+            spec.setName(key2.getName());
+            addDescriptor ("Species name", "", spec.getDescriptors(), template);
+            sample.getDescriptorGroups().add(spec);
         }
     }
     
@@ -525,7 +532,15 @@ public class CFGDatasetApplication implements CommandLineRunner {
             addDescriptor ("Species name", species, spec.getDescriptors(), template);
             sample.getDescriptorGroups().add(spec);
         } else {
-            System.out.println("No species information is found for " + sample.getName());
+            // put missing info for species
+            DescriptorGroup spec = new DescriptorGroup();
+            spec.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Species", template);
+            spec.setKey(key2);
+            spec.setName(key2.getName());
+            addDescriptor ("Species name", "", spec.getDescriptors(), template);
+            sample.getDescriptorGroups().add(spec);
+            //System.out.println("No species information is found for " + sample.getName());
         }
         if (result.getPrimarySequence() != null && !result.getPrimarySequence().trim().isEmpty()) {
             DescriptorGroup natural = new DescriptorGroup();
@@ -621,21 +636,6 @@ public class CFGDatasetApplication implements CommandLineRunner {
         }
         
         addDescriptor ("Comment", commentBuffer.toString().trim(), sample.getDescriptors(), template);
-        
-        // sample reference
-        /*if (result.getReference() != null && !result.getReference().isEmpty()) {
-            DescriptorGroup reference = new DescriptorGroup();
-            reference.setDescriptors(new ArrayList<Description>());
-            DescriptionTemplate key2 = getKeyFromTemplate("Sample reference", template);
-            reference.setKey(key2);
-            reference.setName(key2.getName());
-            String referenceValue = link.getHref();
-            if (referenceValue != null) {
-                addDescriptor ("Value", referenceValue, reference.getDescriptors(), template);
-                addDescriptor ("Type", "URL", reference.getDescriptors(), template);
-                sample.getDescriptorGroups().add(reference);
-            }
-        }*/
         
         //TODO extract further_info as well
         
