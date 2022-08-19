@@ -13,17 +13,23 @@ public class SampleData {
     String species;  //-546303161
     String immunizationSex; // -1790003555
     String primarySequence;
+    String furtherInfo1;
     String subtype; // 27291108
+    String primaryAASequence;
     String storageCondition;
     String antibodyName; // -782475580
     String name;
+    String geneSymbol;
     String organismCells;
+    String species2;
     String dateStored;   //-861196869
     String status;
+    String synonyms;
     String immunizationSchedule; //-1051843856
     String serumSpeciesInfo; //790714772
     String diluent; //-188920193
     String experimentTitle; //443812426
+    String furtherInfo;
     String organismDescription; //1943838091
     String subFamily;
     String vendorCatalogForAntibody; //1281541380
@@ -48,6 +54,7 @@ public class SampleData {
     String estimatedPurity;
     String contaminants; //987326654
     String carrierProtein; //75611650
+    String comments2;
     String comments;
     String methods; //-728300322
     String experimentDescription; //-1958838658
@@ -55,6 +62,7 @@ public class SampleData {
     String antibodyIsotope; //2119431185
     String expressionInfo; //473641455
     String reference; //114605882
+    String pdb;
     String testingMethod; //-1726439334
     String immunogen; //-1585180357
     String family;
@@ -695,6 +703,102 @@ public class SampleData {
      */
     public void setImmunizationProtocol(String immunizationProtocol) {
         this.immunizationProtocol = immunizationProtocol;
+    }
+    /**
+     * @return the furtherInfo1
+     */
+    public String getFurtherInfo1() {
+        return furtherInfo1;
+    }
+    /**
+     * @param furtherInfo1 the furtherInfo1 to set
+     */
+    public void setFurtherInfo1(String furtherInfo1) {
+        this.furtherInfo1 = furtherInfo1;
+    }
+    /**
+     * @return the primaryAASequence
+     */
+    public String getPrimaryAASequence() {
+        return primaryAASequence;
+    }
+    /**
+     * @param primaryAASequence the primaryAASequence to set
+     */
+    public void setPrimaryAASequence(String primaryAASequence) {
+        this.primaryAASequence = primaryAASequence;
+    }
+    /**
+     * @return the geneSymbol
+     */
+    public String getGeneSymbol() {
+        return geneSymbol;
+    }
+    /**
+     * @param geneSymbol the geneSymbol to set
+     */
+    public void setGeneSymbol(String geneSymbol) {
+        this.geneSymbol = geneSymbol;
+    }
+    /**
+     * @return the species2
+     */
+    public String getSpecies2() {
+        return species2;
+    }
+    /**
+     * @param species2 the species2 to set
+     */
+    public void setSpecies2(String species2) {
+        this.species2 = species2;
+    }
+    /**
+     * @return the synonyms
+     */
+    public String getSynonyms() {
+        return synonyms;
+    }
+    /**
+     * @param synonyms the synonyms to set
+     */
+    public void setSynonyms(String synonyms) {
+        this.synonyms = synonyms;
+    }
+    /**
+     * @return the furtherInfo
+     */
+    public String getFurtherInfo() {
+        return furtherInfo;
+    }
+    /**
+     * @param furtherInfo the furtherInfo to set
+     */
+    public void setFurtherInfo(String furtherInfo) {
+        this.furtherInfo = furtherInfo;
+    }
+    /**
+     * @return the comments2
+     */
+    public String getComments2() {
+        return comments2;
+    }
+    /**
+     * @param comments2 the comments2 to set
+     */
+    public void setComments2(String comments2) {
+        this.comments2 = comments2;
+    }
+    /**
+     * @return the pdb
+     */
+    public String getPdb() {
+        return pdb;
+    }
+    /**
+     * @param pdb the pdb to set
+     */
+    public void setPdb(String pdb) {
+        this.pdb = pdb;
     }
 
 }

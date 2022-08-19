@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.glygen.array.client.exception.CustomClientException;
-import org.glygen.array.client.model.ErrorCodes;
-import org.glygen.array.client.model.ErrorMessage;
 import org.glygen.array.client.model.User;
 import org.glygen.array.client.model.cfg.Experiment;
 import org.glygen.array.client.model.cfg.Link;
@@ -111,6 +109,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
         }
         
         String[] datasetFolders = dataFolder.list();
+        String version = dataFolder.getName();
         for (String experimentName: datasetFolders) {
             try {
                 File experimentFolder = new File (dataFolder + File.separator + experimentName);
@@ -203,7 +202,8 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     
                     Slide slide = new Slide();
                     PrintedSlide printedSlide = new PrintedSlide();
-                    printedSlide.setName("CFG5.2PrintedSlide");
+                    
+                    printedSlide.setName("CFG" + version.replace("_",  ".") + "PrintedSlide");
                     slide.setPrintedSlide(printedSlide);
                     slide.setImages(new ArrayList<Image>());
                     
@@ -216,17 +216,18 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     
                     if (rawDataFile != null && rawFile == null) {
                         // upload the file
-                        file = fileClient.uploadFile(dataFolder.getPath() + File.separator + experimentName + File.separator + rawDataFile);
-                        file.setFileFormat("GenePix Results 3");
-                        
-                        rawData.setFile(file);
+                        System.out.println ("uploading raw data");
+                        rawFile = fileClient.uploadFile(dataFolder.getPath() + File.separator + experimentName + File.separator + rawDataFile);
+                        rawFile.setFileFormat("GenePix Results 3");
+                        rawData.setFile(rawFile);
                         rawData.setPowerLevel(10.0);
                     }
                     
                     if (file == null) {
+                        System.out.println ("uploading processed data");
                         // upload the file
                         file = fileClient.uploadFile(dataFolder.getPath() + File.separator + experimentName + File.separator + processedDataFile);
-                        file.setFileFormat("CFG_V5.2");
+                        file.setFileFormat("CFG_V" + version.replace("_",  "."));
                         
                         ProcessedData processedData = new ProcessedData();
                         processedData.setFile(file);
@@ -250,8 +251,8 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                     if (rawData.getFile() == null) {
                                         TimeUnit.SECONDS.sleep(1);
                                     } else {
-                                        TimeUnit.MINUTES.sleep(5);
-                                        timePassed += 5;
+                                        TimeUnit.MINUTES.sleep(2);
+                                        timePassed += 2;
                                     }
                                     try {
                                         ArrayDataset dataset = datasetClient.getDatasetByLabel(datasetName);
@@ -259,7 +260,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                                 dataset.getSlides().get(0).getImages().get(0).getRawDataList().get(0).getStatus() == FutureTaskStatus.ERROR)
                                             done = true;
                                         else 
-                                            System.out.println("Raw data is not done yet! Checking in 5 minutes!");
+                                            System.out.println("Raw data is not done yet! Checking in 2 minutes!");
                                         if (timePassed > 30) {
                                             //login again
                                             datasetClient.clearToken();
@@ -289,7 +290,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                     done = false;
                                     timePassed = 0;
                                     while (!done) {
-                                        TimeUnit.MINUTES.sleep(5);
+                                        TimeUnit.MINUTES.sleep(2);
                                         try {
                                             ArrayDataset dataset = datasetClient.getDatasetByLabel(datasetName);
                                             if (dataset.getSlides().get(0).
@@ -298,8 +299,8 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                                     getImages().get(0).getRawDataList().get(0).getProcessedDataList().get(0).getStatus() == FutureTaskStatus.ERROR)
                                                 done = true;
                                             else
-                                                System.out.println("Processed data is not done yet! Checking in 5 minutes!");
-                                            timePassed += 5;
+                                                System.out.println("Processed data is not done yet! Checking in 2 minutes!");
+                                            timePassed += 2;
                                             if (timePassed > 30) {
                                                 //login again
                                                 datasetClient.clearToken();
@@ -398,7 +399,7 @@ public class CFGDatasetApplication implements CommandLineRunner {
 
     private void fillInBiospecimenInfo(Sample sample, SampleData result, MetadataTemplate template) {
         if (result.getSerumSpeciesInfo() != null && !result.getSerumSpeciesInfo().isEmpty()) {
-            addDescriptor("Species", result.getSerumCollectionInfo(), sample.getDescriptors(), template);
+            addDescriptor("Species", result.getSerumCollectionInfo() == null ? "" : result.getSerumCollectionInfo(), sample.getDescriptors(), template);
             addDescriptor("Biospecimen type", "serum", sample.getDescriptors(), template);
         } else {
             addDescriptor("Species", "", sample.getDescriptors(), template);
@@ -417,13 +418,50 @@ public class CFGDatasetApplication implements CommandLineRunner {
         }
         if (result.getAntibodyIsotope() != null && !result.getAntibodyIsotope().isEmpty()) {
             addDescriptor ("Isotype", result.getAntibodyIsotope(), sample.getDescriptors(), template);
+        } else {
+            // add as not recorded
+            DescriptorGroup group1 = new DescriptorGroup();
+            group1.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Isotype", template);
+            group1.setKey(key2);
+            group1.setName(key2.getName());
+            group1.setNotRecorded(true);
+            DescriptorGroup group2 = new DescriptorGroup();
+            group2.setDescriptors(new ArrayList<Description>());
+            key2 = getKeyFromTemplate("Other isotype", template);
+            group2.setKey(key2);
+            group2.setName(key2.getName());
+            group2.setNotRecorded(true);
+            sample.getDescriptorGroups().add(group1);
+            sample.getDescriptorGroups().add(group2);
         }
         if (result.getSubtype() != null && !result.getSubtype().isEmpty()) {
             addDescriptor ("Subtype", result.getSubtype(), sample.getDescriptors(), template);
+        } else {
+            // add as not recorded
+            DescriptorGroup group1 = new DescriptorGroup();
+            group1.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Subtype", template);
+            group1.setKey(key2);
+            group1.setName(key2.getName());
+            group1.setNotRecorded(true);
+            DescriptorGroup group2 = new DescriptorGroup();
+            group2.setDescriptors(new ArrayList<Description>());
+            key2 = getKeyFromTemplate("Other subtype", template);
+            group2.setKey(key2);
+            group2.setName(key2.getName());
+            group2.setNotRecorded(true);
+            sample.getDescriptorGroups().add(group1);
+            sample.getDescriptorGroups().add(group2);
         }
-        addDescriptor ("Host species", result.getSpecies(), sample.getDescriptors(), template);
-        addDescriptor ("Clonality", result.getAntibodyType(), sample.getDescriptors(), template);
-        addDescriptor ("Antibody name", result.getAntibodyName(), sample.getDescriptors(), template);
+        addDescriptor ("Host species", result.getSpecies() == null ? "": result.getSpecies(), sample.getDescriptors(), template);
+        if (result.getAntibodyType() != null && result.getAntibodyType().toLowerCase().contains("mono"))
+            addDescriptor ("Clonality", "monoclonal", sample.getDescriptors(), template);
+        else if (result.getAntibodyType() != null && result.getAntibodyType().toLowerCase().contains("poly"))
+            addDescriptor ("Clonality", "polyclonal", sample.getDescriptors(), template);
+        else 
+            addDescriptor ("Clonality", "", sample.getDescriptors(), template);
+        addDescriptor ("Antibody name", result.getAntibodyName() == null ? "" : result.getAntibodyName(), sample.getDescriptors(), template);
         addDescriptor ("Type", "", sample.getDescriptors(), template);
         if (result.getImmunizationSex() != null || result.getImmunizationDoseAndRoute() != null || result.getAdjuvant() != null ||
                 result.getAgeOfSubject() != null || result.getImmunizationSchedule() != null) {
@@ -447,6 +485,14 @@ public class CFGDatasetApplication implements CommandLineRunner {
             if (result.getImmunizationSchedule() != null) {
                 addDescriptor("Immunization schedule", result.getImmunizationSchedule(), immunization.getDescriptors(), template);
             }
+            // species is required but no information is available
+            DescriptorGroup species = new DescriptorGroup();
+            species.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key3 = getKeyFromTemplate("Species", template);
+            species.setKey(key3);
+            species.setName(key3.getName());
+            addDescriptor ("Species name", "", species.getDescriptors(), template);
+            immunization.getDescriptors().add(species);
             sample.getDescriptorGroups().add(immunization);
         } else {
             // not recorded
@@ -515,10 +561,10 @@ public class CFGDatasetApplication implements CommandLineRunner {
     }
 
     private void fillInProteinInfo(Sample sample, SampleData result, String species, MetadataTemplate template) {
+        DescriptionTemplate key2 = getKeyFromTemplate("Species", template);
         if (result.getSpecSciName() != null && !result.getSpecSciName().trim().isEmpty()) {
             DescriptorGroup spec = new DescriptorGroup();
             spec.setDescriptors(new ArrayList<Description>());
-            DescriptionTemplate key2 = getKeyFromTemplate("Species", template);
             spec.setKey(key2);
             spec.setName(key2.getName());
             addDescriptor ("Species name", result.getSpecSciName(), spec.getDescriptors(), template);
@@ -526,16 +572,28 @@ public class CFGDatasetApplication implements CommandLineRunner {
         } else if (species != null && !species.trim().isEmpty()) {
             DescriptorGroup spec = new DescriptorGroup();
             spec.setDescriptors(new ArrayList<Description>());
-            DescriptionTemplate key2 = getKeyFromTemplate("Species", template);
             spec.setKey(key2);
             spec.setName(key2.getName());
             addDescriptor ("Species name", species, spec.getDescriptors(), template);
+            sample.getDescriptorGroups().add(spec);
+        } else if (result.getSpecies() != null && !result.getSpecies().trim().isEmpty()) {
+            DescriptorGroup spec = new DescriptorGroup();
+            spec.setDescriptors(new ArrayList<Description>());
+            spec.setKey(key2);
+            spec.setName(key2.getName());
+            addDescriptor ("Species name", result.getSpecies(), spec.getDescriptors(), template);
+            sample.getDescriptorGroups().add(spec);
+        } else if (result.getSpecies2() != null && !result.getSpecies2().trim().isEmpty()) {
+            DescriptorGroup spec = new DescriptorGroup();
+            spec.setDescriptors(new ArrayList<Description>());
+            spec.setKey(key2);
+            spec.setName(key2.getName());
+            addDescriptor ("Species name", result.getSpecies2(), spec.getDescriptors(), template);
             sample.getDescriptorGroups().add(spec);
         } else {
             // put missing info for species
             DescriptorGroup spec = new DescriptorGroup();
             spec.setDescriptors(new ArrayList<Description>());
-            DescriptionTemplate key2 = getKeyFromTemplate("Species", template);
             spec.setKey(key2);
             spec.setName(key2.getName());
             addDescriptor ("Species name", "", spec.getDescriptors(), template);
@@ -545,15 +603,16 @@ public class CFGDatasetApplication implements CommandLineRunner {
         if (result.getPrimarySequence() != null && !result.getPrimarySequence().trim().isEmpty()) {
             DescriptorGroup natural = new DescriptorGroup();
             natural.setDescriptors(new ArrayList<Description>());
-            DescriptionTemplate key2 = getKeyFromTemplate("Natural source", template);
+            key2 = getKeyFromTemplate("Natural source", template);
             natural.setKey(key2);
             natural.setName(key2.getName());
             addDescriptor ("AA sequence", result.getPrimarySequence(), natural.getDescriptors(), template);
+            addDescriptor("Isolation method", null, true, natural.getDescriptors(), template);
             sample.getDescriptorGroups().add(natural);
         } else {
             DescriptorGroup natural = new DescriptorGroup();
             natural.setDescriptors(new ArrayList<Description>());
-            DescriptionTemplate key2 = getKeyFromTemplate("Natural source", template);
+            key2 = getKeyFromTemplate("Natural source", template);
             natural.setKey(key2);
             natural.setName(key2.getName());
             natural.setNotRecorded(true);
@@ -572,6 +631,10 @@ public class CFGDatasetApplication implements CommandLineRunner {
         } else {
             // not recorded
             addDescriptor ("Protein name", null, true, sample.getDescriptors(), template);
+        }
+        
+        if (result.getSynonyms() != null && !result.getSynonyms().trim().isEmpty()) {
+            addDescriptor("Other names", result.getSynonyms().trim(), sample.getDescriptors(), template);
         }
     }
 
@@ -616,6 +679,9 @@ public class CFGDatasetApplication implements CommandLineRunner {
         if (result.getComments() != null && !result.getComments().isEmpty()) {
             commentBuffer.append("Comments:" + result.getComments() + "\n");
         }
+        if (result.getComments2() != null && !result.getComments2().isEmpty()) {
+            commentBuffer.append("Additional Comments:" + result.getComments2() + "\n");
+        }
         if (result.getMethods() != null && !result.getMethods().isEmpty()) {
             commentBuffer.append("Method(s) by which the sample was tested for activity:" + result.getMethods() + "\n");
         }
@@ -634,10 +700,49 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     + "3.Dose (immunogen and adjuvant) and route of immunization 4.Schedule of immunization (weekly, biweekly, etc)" + 
                     ":" + result.getImmunizationProtocol() + "\n");
         }
+        if (result.getPrimaryAASequence() != null && !result.getPrimaryAASequence().trim().isEmpty()) {
+            commentBuffer.append("If Influenza virus, Primary Amino Acid Sequence of HA, the GBP:" + result.getPrimaryAASequence() + "\n");
+        }
+        if (result.getGeneSymbol() != null && !result.getGeneSymbol().trim().isEmpty()) {
+            commentBuffer.append("Gene Symbol:" + result.getGeneSymbol().trim() + "\n");
+        }
         
         addDescriptor ("Comment", commentBuffer.toString().trim(), sample.getDescriptors(), template);
         
-        //TODO extract further_info as well
+        if (result.getFurtherInfo() != null && !result.getFurtherInfo().trim().isEmpty()) {
+            DescriptorGroup entry = new DescriptorGroup();
+            entry.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Database entry", template);
+            entry.setKey(key2);
+            entry.setName(key2.getName());
+            addDescriptor ("Database", "CFG", entry.getDescriptors(), template);
+            addDescriptor ("Database URL", "http://www.functionalglycomics.org/glycomics/molecule/jsp/gbpMolecule-home.jsp", entry.getDescriptors(), template);
+            addDescriptor ("Id", result.getFurtherInfo(), entry.getDescriptors(), template);
+            sample.getDescriptorGroups().add(entry);
+        }
+        
+        if (result.getFurtherInfo1() != null && !result.getFurtherInfo1().trim().isEmpty()) {
+            DescriptorGroup entry = new DescriptorGroup();
+            entry.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Database entry", template);
+            entry.setKey(key2);
+            entry.setName(key2.getName());
+            addDescriptor ("Database", "CFG", entry.getDescriptors(), template);
+            addDescriptor ("Database URL", "http://www.functionalglycomics.org/glycomics/molecule/jsp/gbpMolecule-home.jsp", entry.getDescriptors(), template);
+            addDescriptor ("Id", result.getFurtherInfo1(), entry.getDescriptors(), template);
+            sample.getDescriptorGroups().add(entry);
+        }
+        if (result.getPdb() != null && !result.getPdb().trim().isEmpty()) {
+            DescriptorGroup entry = new DescriptorGroup();
+            entry.setDescriptors(new ArrayList<Description>());
+            DescriptionTemplate key2 = getKeyFromTemplate("Database entry", template);
+            entry.setKey(key2);
+            entry.setName(key2.getName());
+            addDescriptor ("Database", "Protein Data Bank", entry.getDescriptors(), template);
+            addDescriptor ("Database URL", "https://www.rcsb.org/", entry.getDescriptors(), template);
+            addDescriptor ("Id", result.getPdb(), entry.getDescriptors(), template);
+            sample.getDescriptorGroups().add(entry);
+        }
         
         if (experiment.getLinks() != null && !experiment.getLinks().isEmpty()) {
             for (Link link: experiment.getLinks()) {
