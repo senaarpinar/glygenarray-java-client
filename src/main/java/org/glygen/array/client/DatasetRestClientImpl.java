@@ -3,6 +3,7 @@ package org.glygen.array.client;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import org.glygen.array.client.exception.CustomClientException;
 import org.glygen.array.client.model.ArrayDatasetListView;
@@ -468,6 +469,45 @@ public class DatasetRestClientImpl implements DatasetRestClient {
             throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
         } catch (HttpServerErrorException e) {
             throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        }
+    }
+
+    @Override
+    public String makeDatasetPublic(String datasetId) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "array//makearraydatasetpublic/" + datasetId;
+        try {
+            ResponseEntity<String> response = this.restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
+                return null;
+            }
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        } catch (HttpServerErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), e.getMessage());
+        }
+    }
+
+    @Override
+    public ArrayDatasetListView getDatasets(int offset, int limit) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "array/listArrayDataset?offset=" + offset + "&limit=" + limit + "&loadAll=false";
+        try {
+            ResponseEntity<ArrayDatasetListView> response = this.restTemplate.exchange(url, HttpMethod.GET, requestEntity, ArrayDatasetListView.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), "Error gettting metadata list: " + e.getMessage());
         }
     }
 

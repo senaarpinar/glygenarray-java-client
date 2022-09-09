@@ -1,7 +1,9 @@
 package org.glygen.array.client;
 
 import java.util.Date;
+import java.util.List;
 
+import org.glygen.array.client.model.ArrayDatasetListView;
 import org.glygen.array.client.model.data.ArrayDataset;
 import org.glygen.array.client.model.data.Image;
 import org.glygen.array.client.model.data.PrintedSlide;
@@ -47,6 +49,13 @@ public interface DatasetRestClient {
      * @return the id of the newly added array dataset
      */
     String addDataset(String experimentName, String description, Sample sample, Date date);
+    
+    /**
+     * makes the given dataset public
+     * @param datasetId id of the dataset to become public
+     * @return id of the public dataset
+     */
+    String makeDatasetPublic (String datasetId);
     
     /**
      * add the given slide to the dataset
@@ -127,12 +136,14 @@ public interface DatasetRestClient {
      * @return the array dataset of null if not found
      */
     ArrayDataset getDatasetByLabel (String name);
-
+    
     String addImageToSlide(Image image, String slideId, String datasetId);
     String addRawDataToImage(RawData rawData, String imageId, String datasetId);
     String addProcessedDataToRawData(ProcessedData processedData, String rawDataId, String datasetId);
 
     void clearToken();
+
+    ArrayDatasetListView getDatasets(int offset, int limit);
     
     /**
      * return slide given its id
