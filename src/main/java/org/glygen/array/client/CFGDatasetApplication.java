@@ -280,6 +280,8 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                             userClient.login(args[0], args[1]);
                                             token = userClient.getToken();
                                             timePassed = 0;
+                                        } else {
+                                            e.printStackTrace();
                                         }
                                     }
                                     
@@ -370,6 +372,9 @@ public class CFGDatasetApplication implements CommandLineRunner {
         if (name == null || name.trim().isEmpty()) {
             name = experiment.getSampleName().substring(experiment.getSampleName().lastIndexOf(":")+1, experiment.getSampleName().length());
         }
+        // fix unicode characters
+        name = name.replace("\u2013", "-");
+        name = name.replace("\u2014", "-");
         sample.setName(name);
         sample.setDescriptors(new ArrayList<Descriptor>());
         sample.setDescriptorGroups(new ArrayList<DescriptorGroup>());
