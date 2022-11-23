@@ -424,6 +424,25 @@ public class DatasetRestClientImpl implements DatasetRestClient {
         }
         return null;
     }
+    
+    @Override
+    public ArrayDataset getDatasetById(String datasetId) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "array/getarraydataset/" + datasetId + "?loadAll=false";
+        try {
+            
+            ResponseEntity<ArrayDataset> response = this.restTemplate.exchange(url, HttpMethod.GET, requestEntity, ArrayDataset.class);
+            ArrayDataset result = response.getBody();
+            return result;
+        } catch (HttpClientErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), "Error gettting array dataset list: " + e.getMessage());
+        }
+    }
 
     @Override
     public String addRawDataToImage(RawData rawData, String imageId, String datasetId) {

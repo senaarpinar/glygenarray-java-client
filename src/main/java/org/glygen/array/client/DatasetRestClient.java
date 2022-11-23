@@ -144,6 +144,8 @@ public interface DatasetRestClient {
     void clearToken();
 
     ArrayDatasetListView getDatasets(int offset, int limit);
+
+    ArrayDataset getDatasetById(String datasetId);
     
     /**
      * return slide given its id

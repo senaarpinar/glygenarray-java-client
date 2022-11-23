@@ -151,6 +151,8 @@ public class CFGDatasetApplication implements CommandLineRunner {
                     
                     if (datasetName == null || datasetName.trim().isEmpty()) {
                         datasetName = experiment.getSampleName().substring(experiment.getSampleName().lastIndexOf(":"), experiment.getSampleName().length()-1);
+                        datasetName = datasetName.replace("\u2013", "-");
+                        datasetName = datasetName.replace("\u2014", "-");
                     }
                     datasetName += ":" + dt1.format(experiment.getDate()) + ":" + experiment.getPrimScreen();
                     String datasetID = null;
@@ -251,16 +253,20 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                     if (rawData.getFile() == null) {
                                         TimeUnit.SECONDS.sleep(1);
                                     } else {
-                                        TimeUnit.MINUTES.sleep(2);
-                                        timePassed += 2;
+                                        TimeUnit.MINUTES.sleep(1);
+                                        timePassed += 1;
                                     }
                                     try {
-                                        ArrayDataset dataset = datasetClient.getDatasetByLabel(datasetName);
-                                        if (dataset.getSlides().get(0).getImages().get(0).getRawDataList().get(0).getStatus() == FutureTaskStatus.DONE ||
-                                                dataset.getSlides().get(0).getImages().get(0).getRawDataList().get(0).getStatus() == FutureTaskStatus.ERROR)
+                                        ArrayDataset dataset = datasetClient.getDatasetById(datasetID);
+                                        FutureTaskStatus status = getRawDataStatus (dataset, rawDataId);
+                                        if (status == FutureTaskStatus.DONE || status == FutureTaskStatus.ERROR)
                                             done = true;
-                                        else 
-                                            System.out.println("Raw data is not done yet! Checking in 2 minutes!");
+                                        else {
+                                            if (status == null) {
+                                                System.out.println("Failed checking if rawData " + rawDataId + " is finished: " + dataFolder.getName() + File.separator + experimentName);
+                                            }
+                                            System.out.println("Raw data is not done yet! Checking in 1 minutes!");
+                                        }
                                         if (timePassed > 30) {
                                             //login again
                                             datasetClient.clearToken();
@@ -292,17 +298,19 @@ public class CFGDatasetApplication implements CommandLineRunner {
                                     done = false;
                                     timePassed = 0;
                                     while (!done) {
-                                        TimeUnit.MINUTES.sleep(2);
+                                        TimeUnit.MINUTES.sleep(1);
                                         try {
-                                            ArrayDataset dataset = datasetClient.getDatasetByLabel(datasetName);
-                                            if (dataset.getSlides().get(0).
-                                                    getImages().get(0).getRawDataList().get(0).getProcessedDataList().get(0).getStatus() == FutureTaskStatus.DONE ||
-                                                    dataset.getSlides().get(0).
-                                                    getImages().get(0).getRawDataList().get(0).getProcessedDataList().get(0).getStatus() == FutureTaskStatus.ERROR)
+                                            ArrayDataset dataset = datasetClient.getDatasetById(datasetID);
+                                            FutureTaskStatus status = getProcessedDataStatus (dataset, processedDataId);
+                                            if (status == FutureTaskStatus.DONE || status == FutureTaskStatus.ERROR)
                                                 done = true;
-                                            else
-                                                System.out.println("Processed data is not done yet! Checking in 2 minutes!");
-                                            timePassed += 2;
+                                            else {
+                                                if (status == null) {
+                                                    System.out.println("Failed checking if processeddata " + processedDataId + " is finished: " + dataFolder.getName() + File.separator + experimentName);
+                                                }
+                                                System.out.println("Processed data is not done yet! Checking in 1 minutes!");
+                                            }
+                                            timePassed += 1;
                                             if (timePassed > 30) {
                                                 //login again
                                                 datasetClient.clearToken();
@@ -349,13 +357,45 @@ public class CFGDatasetApplication implements CommandLineRunner {
         }
     }
     
+    private FutureTaskStatus getProcessedDataStatus(ArrayDataset dataset, String processedDataId) {
+        if (dataset != null) {
+            for (Slide slide: dataset.getSlides()) {
+                for (Image image: slide.getImages()) {
+                    for (RawData rawData: image.getRawDataList()) {
+                        for (ProcessedData processedData: rawData.getProcessedDataList()) {
+                            if (processedData.getId().equals(processedDataId)) {
+                                return processedData.getStatus();
+                            }
+                        }
+                     }
+                }
+            }
+        }
+        return null;
+    }
+
+    private FutureTaskStatus getRawDataStatus(ArrayDataset dataset, String rawDataId) {
+        if (dataset != null) {
+            for (Slide slide: dataset.getSlides()) {
+                for (Image image: slide.getImages()) {
+                    for (RawData rawData: image.getRawDataList()) {
+                        if (rawData.getId().equals(rawDataId)) {
+                            return rawData.getStatus();
+                        }
+                     }
+                }
+            }
+        }
+        return null;
+    }
+
     private Experiment getExperimentDetails (String experimentName, String url, String token) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.add("Authorization", token);
         HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
-        url = url + "cfg/getSampleData?experimentId=" + experimentName;
+        url = "http://localhost:8080/cfg/getSampleData?experimentId=" + experimentName;
         try {
             ResponseEntity<Experiment> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Experiment.class);
             Experiment experiment = response.getBody();
