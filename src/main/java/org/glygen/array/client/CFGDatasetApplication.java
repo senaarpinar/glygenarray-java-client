@@ -1,12 +1,22 @@
 package org.glygen.array.client;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.glygen.array.client.exception.CustomClientException;
 import org.glygen.array.client.model.User;
 import org.glygen.array.client.model.cfg.Experiment;
@@ -28,6 +38,7 @@ import org.glygen.array.client.model.metadata.Sample;
 import org.glygen.array.client.model.template.DescriptionTemplate;
 import org.glygen.array.client.model.template.DescriptorGroupTemplate;
 import org.glygen.array.client.model.template.MetadataTemplate;
+import org.grits.toolbox.glycanarray.library.om.annotation.WorkingSolution;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -237,6 +248,21 @@ public class CFGDatasetApplication implements CommandLineRunner {
                         
                         rawData.getProcessedDataList().add(processedData);
                         
+                        if (version.contains("5_1")) {
+                            // check if this processed data needs to use a different printed slide
+                            boolean v2 = checkSlideVersion (version, dataFolder.getPath() + File.separator + experimentName + File.separator + processedDataFile);
+                            if (v2) {
+                                printedSlide.setName("CFG5.1v2PrintedSlide");
+                            }
+                        }
+                        if (version.contains("5_0")) {
+                            // check if this processed data needs to use a different printed slide
+                            boolean v2 = checkSlideVersion (version, dataFolder.getPath() + File.separator + experimentName + File.separator + processedDataFile);
+                            if (v2) {
+                                printedSlide.setName("CFG5.0v2PrintedSlide");
+                            }
+                        }
+                        
                         // add slide
                         String slideId = datasetClient.addSlideToDataset(slide, datasetID);
                         slide.setId(slideId);
@@ -357,6 +383,47 @@ public class CFGDatasetApplication implements CommandLineRunner {
         }
     }
     
+    private boolean checkSlideVersion(String version, String filename) {
+        File file = new File(filename);
+        // need to read the excel file and look for the existence of the
+        // following sequence: Neu5Aca2-3Galb1-3GalNAcb1-4Galb1-4Glcb-Sp0, if found it is v2, if not it is original version
+        try {
+            Workbook workbook = WorkbookFactory.create(file);
+            for (int i=0; i < workbook.getNumberOfSheets(); i++) {
+                Sheet sheet = workbook.getSheetAt(i);
+                Iterator<Row> rowIterator = sheet.iterator();
+                while (rowIterator.hasNext()) {
+                    Row row = rowIterator.next();
+                    Iterator<Cell> cellIterator = row.cellIterator();
+                    while (cellIterator.hasNext()) {
+                        Cell cell = cellIterator.next();
+                        try {
+                            String cellValue = cell.getStringCellValue();
+                            if (cellValue != null) {
+                                if (version.contains("5_1") && cellValue.contains("Neu5Aca2-3Galb1-3GalNAcb1-4Galb1-4Glcb-Sp0")) {
+                                    return true;
+                                } else if (version.contains("5_0") && 
+                                        (cellValue.contains("Galb1-4(Fuca1-3)GlcNAcb1-4Galb1-4(Fuca1-3)GlcNAcb1-4Galb1-4(Fuca1-3)GlcNAcb-Sp0") ||
+                                                cellValue.contains("Galb1-4(Fuca1-3)GlcNAcb1-4Galb1-4(Fuca1-3)GlcNAcb-SP0"))) {
+                                    return true;
+                                }
+                            }
+                        } catch (Exception e) {
+                            // skip this cell
+                        }
+                    }
+                }
+            }
+        } catch (InvalidFormatException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     private FutureTaskStatus getProcessedDataStatus(ArrayDataset dataset, String processedDataId) {
         if (dataset != null) {
             for (Slide slide: dataset.getSlides()) {

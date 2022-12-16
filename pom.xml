@@ -54,16 +54,16 @@
 	    <version>1.18</version>
 	</dependency>
 	<dependency>
-			<groupId>org.eurocarbdb.glycanbuilder</groupId>
-			<artifactId>glycanbuilder2</artifactId>
-			<version>1.12.0</version>
-			<exclusions>
-		        <exclusion>
-		            <groupId>log4j</groupId>
-		            <artifactId>log4j</artifactId>
-		        </exclusion>
-		    </exclusions>
-		</dependency>
+		<groupId>org.eurocarbdb.glycanbuilder</groupId>
+		<artifactId>glycanbuilder2</artifactId>
+		<version>1.12.0</version>
+		<exclusions>
+	        <exclusion>
+	            <groupId>log4j</groupId>
+	            <artifactId>log4j</artifactId>
+	        </exclusion>
+	    </exclusions>
+	</dependency>
 	<dependency>
 	  <groupId>resourcesdb</groupId>
 	  <artifactId>resourcesdb_interfaces</artifactId>
@@ -81,21 +81,33 @@
 	    <version>1.2.17</version>
 	</dependency>
 	<!--  GlycoInfo -->
-		<dependency>
-		  <groupId>glycoinfo</groupId>
-		  <artifactId>converter</artifactId>
-		  <version>2.6.0</version>
-		</dependency>
-		<dependency>
-		  <groupId>glycoinfo</groupId>
-		  <artifactId>molecular</artifactId>
-		  <version>0.1.37</version>
-		</dependency>
-		<dependency>
-		  <groupId>glycoinfo</groupId>
-		  <artifactId>wurcs</artifactId>
-		  <version>1.0.1</version>
-		</dependency>
+	<dependency>
+	  <groupId>glycoinfo</groupId>
+	  <artifactId>converter</artifactId>
+	  <version>2.6.0</version>
+	</dependency>
+	<dependency>
+	  <groupId>glycoinfo</groupId>
+	  <artifactId>molecular</artifactId>
+	  <version>0.1.37</version>
+	</dependency>
+	<dependency>
+	  <groupId>glycoinfo</groupId>
+	  <artifactId>wurcs</artifactId>
+	  <version>1.0.1</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
+	<dependency>
+	    <groupId>org.apache.poi</groupId>
+	    <artifactId>poi-ooxml</artifactId>
+	    <version>3.9</version>
+	    <exclusions>
+	    	<exclusion>
+	    		<groupId>xml-apis</groupId>
+	    		<artifactId>xml-apis</artifactId>
+	    	</exclusion>
+	    </exclusions>
+	</dependency>
   </dependencies>
   
   <build>
