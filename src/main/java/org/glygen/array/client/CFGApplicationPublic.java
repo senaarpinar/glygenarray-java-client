@@ -82,7 +82,7 @@ public class CFGApplicationPublic implements CommandLineRunner {
                             if (d.getStatus() == FutureTaskStatus.DONE || d.getStatus() == FutureTaskStatus.ERROR)
                                 done = true;
                             else 
-                                System.out.println("making public is not done yet! Checking in 2 minutes!");
+                                System.out.println("making public is not done yet! Checking in 1 minutes!");
                             if (timePassed > 30) {
                                 //login again
                                 datasetClient.clearToken();
@@ -98,6 +98,10 @@ public class CFGApplicationPublic implements CommandLineRunner {
                                 datasetClient.clearToken();
                                 userClient.login(args[0], args[1]);
                                 timePassed = 0;
+                            } else {
+                            	// error! skip it
+                            	System.out.println("Skipping!");
+                            	done = true;
                             }
                         }
                         
