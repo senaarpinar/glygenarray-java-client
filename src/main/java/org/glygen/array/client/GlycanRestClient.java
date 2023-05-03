@@ -5,16 +5,23 @@ import java.util.List;
 import org.glygen.array.client.model.BlockLayout;
 import org.glygen.array.client.model.Confirmation;
 import org.glygen.array.client.model.Feature;
+import org.glygen.array.client.model.FeatureListResultView;
 import org.glygen.array.client.model.Glycan;
+import org.glygen.array.client.model.GlycanListResultView;
 import org.glygen.array.client.model.ImportGRITSLibraryResult;
 import org.glygen.array.client.model.Linker;
 import org.glygen.array.client.model.LinkerClassification;
+import org.glygen.array.client.model.LinkerListResultView;
 import org.glygen.array.client.model.SlideLayout;
 import org.glygen.array.client.model.data.FileWrapper;
 
 public interface GlycanRestClient {
 	
 	public static final String uriPrefix = "http://glygen.org/glygenarray/";
+	
+	GlycanListResultView getGlycans(int offset, int limit);
+	FeatureListResultView getFeatures(int offset, int limit);
+	LinkerListResultView getLinkers(int offset, int limit);
 	
 	/**
 	 * adds the given glycan to the repository for the given user

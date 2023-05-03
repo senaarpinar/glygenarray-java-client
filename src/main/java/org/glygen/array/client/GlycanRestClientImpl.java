@@ -11,17 +11,21 @@ import java.util.List;
 import java.util.Map;
 
 import org.glygen.array.client.exception.CustomClientException;
+import org.glygen.array.client.model.ArrayDatasetListView;
 import org.glygen.array.client.model.BlockLayout;
 import org.glygen.array.client.model.Confirmation;
 import org.glygen.array.client.model.Feature;
+import org.glygen.array.client.model.FeatureListResultView;
 import org.glygen.array.client.model.FeatureType;
 import org.glygen.array.client.model.Glycan;
+import org.glygen.array.client.model.GlycanListResultView;
 import org.glygen.array.client.model.GlycanSequenceFormat;
 import org.glygen.array.client.model.GlycanType;
 import org.glygen.array.client.model.ImportGRITSLibraryResult;
 import org.glygen.array.client.model.LibraryImportInput;
 import org.glygen.array.client.model.Linker;
 import org.glygen.array.client.model.LinkerClassification;
+import org.glygen.array.client.model.LinkerListResultView;
 import org.glygen.array.client.model.LoginRequest;
 import org.glygen.array.client.model.SequenceDefinedGlycan;
 import org.glygen.array.client.model.SlideLayout;
@@ -365,7 +369,7 @@ public class GlycanRestClientImpl implements GlycanRestClient {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.add("Authorization", token);
         HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
-        String url = this.url + "/deletefeature/" + feature.getId();
+        String url = this.url + "array/deletefeature/" + feature.getId();
         ResponseEntity<Confirmation> response = this.restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, Confirmation.class);
         return response.getBody(); 
     }
@@ -378,7 +382,7 @@ public class GlycanRestClientImpl implements GlycanRestClient {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.add("Authorization", token);
         HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
-        String url = this.url + "/deletelinker/" + linker.getId();
+        String url = this.url + "array/deletelinker/" + linker.getId();
         ResponseEntity<Confirmation> response = this.restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, Confirmation.class);
         return response.getBody(); 
         
@@ -392,9 +396,60 @@ public class GlycanRestClientImpl implements GlycanRestClient {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.add("Authorization", token);
         HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
-        String url = this.url + "/delete/" + glycan.getId();
+        String url = this.url + "array/delete/" + glycan.getId();
         ResponseEntity<Confirmation> response = this.restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, Confirmation.class);
         return response.getBody(); 
         
+    }
+
+    @Override
+    public GlycanListResultView getGlycans(int offset, int limit) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "array/listGlycans?offset=" + offset + "&limit=" + limit + "&loadAll=false";
+        try {
+            ResponseEntity<GlycanListResultView> response = this.restTemplate.exchange(url, HttpMethod.GET, requestEntity, GlycanListResultView.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), "Error gettting glycan list: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public FeatureListResultView getFeatures(int offset, int limit) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "array/listFeatures?offset=" + offset + "&limit=" + limit + "&loadAll=false";
+        try {
+            ResponseEntity<FeatureListResultView> response = this.restTemplate.exchange(url, HttpMethod.GET, requestEntity, FeatureListResultView.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), "Error gettting glycan list: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public LinkerListResultView getLinkers(int offset, int limit) {
+        if (token == null) login (this.username, this.password);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "array/listLinkers?offset=" + offset + "&limit=" + limit + "&loadAll=false";
+        try {
+            ResponseEntity<LinkerListResultView> response = this.restTemplate.exchange(url, HttpMethod.GET, requestEntity, LinkerListResultView.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            throw new CustomClientException(e.getStatusCode(), e.getResponseBodyAsString(), "Error gettting glycan list: " + e.getMessage());
+        }
     }
 }
