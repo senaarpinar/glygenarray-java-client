@@ -3,6 +3,7 @@ package org.glygen.array.client;
 import java.util.List;
 
 import org.glygen.array.client.model.BlockLayout;
+import org.glygen.array.client.model.Confirmation;
 import org.glygen.array.client.model.Feature;
 import org.glygen.array.client.model.Glycan;
 import org.glygen.array.client.model.ImportGRITSLibraryResult;
@@ -34,6 +35,10 @@ public interface GlycanRestClient {
 	 * @return the identifier of the newly added feature in the repository
 	 */
 	String addFeature (Feature feature);
+	
+	Confirmation deleteFeature (Feature feature);
+	Confirmation deleteLinker (Linker linker);
+	Confirmation deleteGlycan (Glycan glycan);
 	
 	/**
 	 * adds the given block layout to the repository for the given user

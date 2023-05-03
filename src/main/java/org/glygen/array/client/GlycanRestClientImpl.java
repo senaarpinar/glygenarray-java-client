@@ -12,6 +12,7 @@ import java.util.Map;
 
 import org.glygen.array.client.exception.CustomClientException;
 import org.glygen.array.client.model.BlockLayout;
+import org.glygen.array.client.model.Confirmation;
 import org.glygen.array.client.model.Feature;
 import org.glygen.array.client.model.FeatureType;
 import org.glygen.array.client.model.Glycan;
@@ -354,5 +355,46 @@ public class GlycanRestClientImpl implements GlycanRestClient {
         }
         
         return result;  
+    }
+
+    @Override
+    public Confirmation deleteFeature(Feature feature) {
+        if (token == null) login(this.username, this.password);
+        //set the header with token
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "/deletefeature/" + feature.getId();
+        ResponseEntity<Confirmation> response = this.restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, Confirmation.class);
+        return response.getBody(); 
+    }
+
+    @Override
+    public Confirmation deleteLinker(Linker linker) {
+        if (token == null) login(this.username, this.password);
+        //set the header with token
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "/deletelinker/" + linker.getId();
+        ResponseEntity<Confirmation> response = this.restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, Confirmation.class);
+        return response.getBody(); 
+        
+    }
+
+    @Override
+    public Confirmation deleteGlycan(Glycan glycan) {
+        if (token == null) login(this.username, this.password);
+        //set the header with token
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.add("Authorization", token);
+        HttpEntity<Void> requestEntity = new HttpEntity<Void>(null, headers);
+        String url = this.url + "/delete/" + glycan.getId();
+        ResponseEntity<Confirmation> response = this.restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, Confirmation.class);
+        return response.getBody(); 
+        
     }
 }
